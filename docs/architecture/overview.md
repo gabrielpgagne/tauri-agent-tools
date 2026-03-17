@@ -4,7 +4,7 @@
 
 ```mermaid
 graph TD
-    CLI[src/cli.ts<br/>Entry Point] --> CMD[src/commands/<br/>11 Commands]
+    CLI[src/cli.ts<br/>Entry Point] --> CMD[src/commands/<br/>14 Commands]
     CMD --> PA[src/platform/<br/>Platform Adapters]
     CMD --> BC[src/bridge/<br/>Bridge Client]
     PA --> X11[X11 Adapter<br/>xdotool + import]
@@ -25,7 +25,7 @@ graph TD
 
 ## Entry Point
 
-`src/cli.ts` creates the `commander` program and registers all 11 commands. It also manages:
+`src/cli.ts` creates the `commander` program and registers all 14 commands. It also manages:
 
 - **Platform adapter creation** via `getAdapter()` — lazy initialization with tool checking
 - **Display server detection** — delegates to `detectDisplayServer()` in `src/platform/detect.ts`
@@ -35,8 +35,9 @@ graph TD
 Each command file exports a `registerXxx(program, ...)` function:
 
 - **Platform-dependent commands** (`screenshot`, `info`, `wait`, `list-windows`) receive `getAdapter` as a parameter
-- **Bridge-dependent commands** (`dom`, `eval`, `ipc-monitor`, `console-monitor`, `storage`, `page-state`) use `resolveBridge()` from `shared.ts`
-- **Both** (`screenshot` with `--selector`, `wait`) use both adapter and bridge
+- **Bridge-dependent commands** (`dom`, `eval`, `ipc-monitor`, `console-monitor`, `storage`, `page-state`, `mutations`) use `resolveBridge()` from `shared.ts`
+- **Both** (`screenshot` with `--selector`, `wait`, `snapshot`) use both adapter and bridge
+- **Local-only commands** (`diff`) operate on local files with no bridge or adapter
 
 `src/commands/shared.ts` provides two utilities:
 

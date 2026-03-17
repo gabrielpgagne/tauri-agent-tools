@@ -18,6 +18,9 @@ import { registerIpcMonitor } from './commands/ipcMonitor.js';
 import { registerPageState } from './commands/pageState.js';
 import { registerStorage } from './commands/storage.js';
 import { registerConsoleMonitor } from './commands/consoleMonitor.js';
+import { registerMutations } from './commands/mutations.js';
+import { registerSnapshot } from './commands/snapshot.js';
+import { registerDiff } from './commands/diff.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(resolve(__dirname, '..', 'package.json'), 'utf-8'));
@@ -56,6 +59,9 @@ registerIpcMonitor(program);
 registerPageState(program);
 registerStorage(program);
 registerConsoleMonitor(program);
+registerMutations(program);
+registerSnapshot(program, getAdapter);
+registerDiff(program);
 
 program.parseAsync().catch((err: unknown) => {
   console.error(err instanceof Error ? err.message : String(err));

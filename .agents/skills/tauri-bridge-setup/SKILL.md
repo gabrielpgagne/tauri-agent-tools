@@ -1,7 +1,7 @@
 ---
 name: tauri-bridge-setup
 description: How to add the tauri-agent-tools Rust dev bridge to a Tauri application
-version: 0.2.0
+version: 0.3.0
 tags: [tauri, rust, bridge, setup, integration]
 ---
 

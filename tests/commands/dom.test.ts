@@ -119,6 +119,322 @@ describe('DOM command', () => {
       expect(line).toBe('[button] "Menu" (not expanded)');
     });
   });
+
+  describe('command integration — default DOM mode', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('outputs tree view by default', async () => {
+      const tree = {
+        tag: 'body',
+        rect: { width: 1920, height: 1080 },
+        children: [
+          { tag: 'div', id: 'app', rect: { width: 1920, height: 1080 }, children: [
+            { tag: 'h1', text: 'Hello', rect: { width: 200, height: 40 } },
+          ]},
+        ],
+      };
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: JSON.stringify(tree) }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { Command } = await import('commander');
+      const { registerDom } = await import('../../src/commands/dom.js');
+      const program = new Command();
+      registerDom(program);
+
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await program.parseAsync(['node', 'test', 'dom']);
+
+      const output = logSpy.mock.calls[0][0] as string;
+      logSpy.mockRestore();
+      vi.unstubAllGlobals();
+
+      expect(output).toContain('body');
+      expect(output).toContain('div#app');
+      expect(output).toContain('h1');
+    });
+
+    it('outputs JSON when --json is set', async () => {
+      const tree = { tag: 'body', rect: { width: 1920, height: 1080 } };
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: JSON.stringify(tree) }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { Command } = await import('commander');
+      const { registerDom } = await import('../../src/commands/dom.js');
+      const program = new Command();
+      registerDom(program);
+
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await program.parseAsync(['node', 'test', 'dom', '--json']);
+
+      const output = JSON.parse(logSpy.mock.calls[0][0] as string);
+      logSpy.mockRestore();
+      vi.unstubAllGlobals();
+
+      expect(output.tag).toBe('body');
+    });
+
+    it('throws when element not found', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: null }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { Command } = await import('commander');
+      const { registerDom } = await import('../../src/commands/dom.js');
+      const program = new Command();
+      program.exitOverride();
+      registerDom(program);
+
+      await expect(
+        program.parseAsync(['node', 'test', 'dom', '#nonexistent']),
+      ).rejects.toThrow('Element not found: #nonexistent');
+
+      vi.unstubAllGlobals();
+    });
+
+    it('uses -s selector option over positional argument', async () => {
+      const tree = { tag: 'div', id: 'target', rect: { width: 100, height: 50 } };
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: JSON.stringify(tree) }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { Command } = await import('commander');
+      const { registerDom } = await import('../../src/commands/dom.js');
+      const program = new Command();
+      registerDom(program);
+
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await program.parseAsync(['node', 'test', 'dom', '-s', '#target', '--json']);
+      logSpy.mockRestore();
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.js).toContain('#target');
+
+      vi.unstubAllGlobals();
+    });
+  });
+
+  describe('command integration — --count mode', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('outputs element count', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: 5 }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { Command } = await import('commander');
+      const { registerDom } = await import('../../src/commands/dom.js');
+      const program = new Command();
+      registerDom(program);
+
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await program.parseAsync(['node', 'test', 'dom', '.item', '--count']);
+
+      expect(logSpy.mock.calls[0][0]).toBe('5');
+      logSpy.mockRestore();
+      vi.unstubAllGlobals();
+    });
+
+    it('sends querySelectorAll().length to bridge', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: 0 }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { Command } = await import('commander');
+      const { registerDom } = await import('../../src/commands/dom.js');
+      const program = new Command();
+      registerDom(program);
+
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await program.parseAsync(['node', 'test', 'dom', 'li.active', '--count']);
+      logSpy.mockRestore();
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.js).toContain("querySelectorAll('li.active').length");
+
+      vi.unstubAllGlobals();
+    });
+  });
+
+  describe('command integration — --first mode', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('returns first match as tree line', async () => {
+      const node = { tag: 'button', id: 'submit', rect: { width: 80, height: 32 } };
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: JSON.stringify(node) }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { Command } = await import('commander');
+      const { registerDom } = await import('../../src/commands/dom.js');
+      const program = new Command();
+      registerDom(program);
+
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await program.parseAsync(['node', 'test', 'dom', 'button', '--first']);
+
+      expect(logSpy.mock.calls[0][0]).toContain('button#submit');
+      expect(logSpy.mock.calls[0][0]).toContain('(80x32)');
+      logSpy.mockRestore();
+      vi.unstubAllGlobals();
+    });
+
+    it('returns first match as JSON', async () => {
+      const node = { tag: 'input', attributes: { type: 'email' }, rect: { width: 200, height: 30 } };
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: JSON.stringify(node) }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { Command } = await import('commander');
+      const { registerDom } = await import('../../src/commands/dom.js');
+      const program = new Command();
+      registerDom(program);
+
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await program.parseAsync(['node', 'test', 'dom', 'input', '--first', '--json']);
+
+      const output = JSON.parse(logSpy.mock.calls[0][0] as string);
+      logSpy.mockRestore();
+      vi.unstubAllGlobals();
+
+      expect(output.tag).toBe('input');
+      expect(output.attributes.type).toBe('email');
+    });
+
+    it('throws when no match found', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: null }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { Command } = await import('commander');
+      const { registerDom } = await import('../../src/commands/dom.js');
+      const program = new Command();
+      program.exitOverride();
+      registerDom(program);
+
+      await expect(
+        program.parseAsync(['node', 'test', 'dom', '#missing', '--first']),
+      ).rejects.toThrow('Element not found: #missing');
+
+      vi.unstubAllGlobals();
+    });
+  });
+
+  describe('command integration — accessibility mode', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('outputs accessibility tree', async () => {
+      const tree = {
+        role: 'navigation',
+        name: 'Main',
+        children: [
+          { role: 'link', name: 'Home' },
+          { role: 'link', name: 'About' },
+        ],
+      };
+
+      // getAccessibilityTree calls bridge.eval which returns JSON string
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: JSON.stringify(tree) }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { Command } = await import('commander');
+      const { registerDom } = await import('../../src/commands/dom.js');
+      const program = new Command();
+      registerDom(program);
+
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await program.parseAsync(['node', 'test', 'dom', '--mode', 'accessibility']);
+
+      const output = logSpy.mock.calls[0][0] as string;
+      logSpy.mockRestore();
+      vi.unstubAllGlobals();
+
+      expect(output).toContain('[navigation] "Main"');
+      expect(output).toContain('[link] "Home"');
+      expect(output).toContain('[link] "About"');
+    });
+
+    it('outputs accessibility tree as JSON', async () => {
+      const tree = { role: 'button', name: 'Submit', state: { disabled: true } };
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: JSON.stringify(tree) }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { Command } = await import('commander');
+      const { registerDom } = await import('../../src/commands/dom.js');
+      const program = new Command();
+      registerDom(program);
+
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await program.parseAsync(['node', 'test', 'dom', '--mode', 'accessibility', '--json']);
+
+      const output = JSON.parse(logSpy.mock.calls[0][0] as string);
+      logSpy.mockRestore();
+      vi.unstubAllGlobals();
+
+      expect(output.role).toBe('button');
+      expect(output.name).toBe('Submit');
+      expect(output.state.disabled).toBe(true);
+    });
+
+    it('throws when element not found in accessibility mode', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: null }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { Command } = await import('commander');
+      const { registerDom } = await import('../../src/commands/dom.js');
+      const program = new Command();
+      program.exitOverride();
+      registerDom(program);
+
+      await expect(
+        program.parseAsync(['node', 'test', 'dom', '#gone', '--mode', 'accessibility']),
+      ).rejects.toThrow('Element not found: #gone');
+
+      vi.unstubAllGlobals();
+    });
+  });
 });
 
 // Helper for a11y node formatting (mirrors dom.ts implementation)

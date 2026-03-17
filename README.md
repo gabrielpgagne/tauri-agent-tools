@@ -4,7 +4,7 @@
 
 **Agent-driven inspection toolkit for Tauri desktop apps**
 
-11 read-only commands to screenshot, inspect, and monitor Tauri apps from the CLI.
+14 read-only commands to screenshot, inspect, and monitor Tauri apps from the CLI.
 
 [![CI](https://github.com/cesarandreslopez/tauri-agent-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/cesarandreslopez/tauri-agent-tools/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/tauri-agent-tools.svg)](https://www.npmjs.com/package/tauri-agent-tools)
@@ -107,6 +107,7 @@ Query DOM structure from the Tauri app.
 | `--depth <number>` | Max child depth (default: 3) |
 | `--tree` | Compact tree view (default) |
 | `--styles` | Include computed styles |
+| `--text <pattern>` | Find elements containing this text (case-insensitive) |
 | `--count` | Just output match count |
 | `--first` | Only return first match |
 | `--json` | Full structured JSON output |
@@ -189,6 +190,43 @@ Query webview page state: URL, title, viewport, scroll position, document size, 
 |--------|-------------|
 | `--json` | Output as JSON |
 
+### `diff`
+
+Compare two screenshots and output difference metrics.
+
+| Option | Description |
+|--------|-------------|
+| `<image1>` | First image path |
+| `<image2>` | Second image path |
+| `-o, --output <path>` | Diff image output path |
+| `--threshold <percent>` | Fail (exit code 1) if difference exceeds this percentage |
+| `--json` | Output structured JSON |
+
+### `mutations`
+
+Watch DOM mutations on a CSS selector (read-only). Patches a `MutationObserver` into the webview, polls for changes, and cleans up on exit.
+
+| Option | Description |
+|--------|-------------|
+| `<selector>` | CSS selector of the element to observe |
+| `--attributes` | Also watch attribute changes |
+| `--interval <ms>` | Poll interval in milliseconds (default: 500) |
+| `--duration <ms>` | Auto-stop after N milliseconds |
+| `--json` | Output one JSON object per line |
+
+### `snapshot`
+
+Capture screenshot + DOM tree + page state + storage in one shot. Writes multiple files with a shared prefix.
+
+| Option | Description |
+|--------|-------------|
+| `-o, --output <prefix>` | Output path prefix (e.g. `/tmp/debug`) |
+| `-s, --selector <css>` | CSS selector to screenshot (full window if omitted) |
+| `-t, --title <regex>` | Window title to match (default: auto-discover) |
+| `--dom-depth <number>` | DOM tree depth (default: 3) |
+| `--eval <js>` | Additional JS to eval and save |
+| `--json` | Output structured manifest |
+
 ## How It Works
 
 ```
@@ -253,7 +291,7 @@ This package ships [Agent Skills](https://agentskills.io) so AI coding agents ca
 
 | Skill | Description |
 |-------|-------------|
-| `tauri-agent-tools` | Using all 11 CLI commands to inspect Tauri apps |
+| `tauri-agent-tools` | Using all 14 CLI commands to inspect Tauri apps |
 | `tauri-bridge-setup` | Adding the Rust dev bridge to a Tauri project |
 
 <details>
@@ -307,7 +345,7 @@ Full documentation is available at the [docs site](https://cesarandreslopez.gith
 - [Installation](https://cesarandreslopez.github.io/tauri-agent-tools/getting-started/installation/) — system requirements and setup
 - [Quick Start](https://cesarandreslopez.github.io/tauri-agent-tools/getting-started/quick-start/) — get running in 5 minutes
 - [Bridge Setup](https://cesarandreslopez.github.io/tauri-agent-tools/getting-started/bridge-setup/) — integrate the Rust bridge into your Tauri app
-- [Command Reference](https://cesarandreslopez.github.io/tauri-agent-tools/commands/) — all 11 commands with examples
+- [Command Reference](https://cesarandreslopez.github.io/tauri-agent-tools/commands/) — all 14 commands with examples
 - [Platform Support](https://cesarandreslopez.github.io/tauri-agent-tools/platform-support/) — X11, Wayland, macOS details
 - [Architecture](https://cesarandreslopez.github.io/tauri-agent-tools/architecture/overview/) — how it works under the hood
 

@@ -21,6 +21,7 @@ tauri-agent-tools dom [selector] [options]
 | `--depth <number>` | Max child depth | `3` |
 | `--tree` | Compact tree view (default) | — |
 | `--styles` | Include computed styles (display, visibility, opacity, position, overflow) | — |
+| `--text <pattern>` | Find elements containing this text (case-insensitive) | — |
 | `--count` | Just output match count | — |
 | `--first` | Only return first match (depth 0) | — |
 | `--json` | Full structured JSON output | — |
@@ -80,6 +81,22 @@ tauri-agent-tools dom --mode accessibility --depth 2
       [link] "Settings"
   [main]
     [heading] "Dashboard" (level=1)
+```
+
+### Find elements by text
+
+```bash
+# Find all elements containing "Settings"
+tauri-agent-tools dom --text "Settings"
+
+# Find within a specific subtree
+tauri-agent-tools dom "#sidebar" --text "Settings"
+
+# Get just the first match
+tauri-agent-tools dom --text "Settings" --first
+
+# Count matches
+tauri-agent-tools dom --text "Settings" --count
 ```
 
 ### JSON output

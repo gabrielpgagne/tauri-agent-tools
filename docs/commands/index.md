@@ -1,6 +1,6 @@
 # Command Reference
 
-tauri-agent-tools provides 11 read-only commands for inspecting Tauri applications.
+tauri-agent-tools provides 14 read-only commands for inspecting Tauri applications.
 
 ## Command Summary
 
@@ -16,12 +16,17 @@ tauri-agent-tools provides 11 read-only commands for inspecting Tauri applicatio
 | [`console-monitor`](console-monitor.md) | Yes | Monitor console output in real-time |
 | [`storage`](storage.md) | Yes | Inspect localStorage, sessionStorage, and cookies |
 | [`page-state`](page-state.md) | Yes | Query webview page state |
+| [`diff`](diff.md) | No | Compare two screenshots with difference metrics |
+| [`mutations`](mutations.md) | Yes | Watch DOM mutations on a CSS selector |
+| [`snapshot`](snapshot.md) | Yes | Capture screenshot + DOM + page state + storage in one shot |
 
 ## Categories
 
 ### Visual Capture
 
 - **[screenshot](screenshot.md)** — capture full windows or specific DOM elements with real screen pixels
+- **[diff](diff.md)** — compare two screenshots with pixel-level difference metrics
+- **[snapshot](snapshot.md)** — capture screenshot + DOM tree + page state + storage in a single call
 
 ### DOM Inspection
 
@@ -32,6 +37,7 @@ tauri-agent-tools provides 11 read-only commands for inspecting Tauri applicatio
 
 - **[ipc-monitor](ipc-monitor.md)** — watch Tauri IPC calls with timing and filtering
 - **[console-monitor](console-monitor.md)** — capture console.log/warn/error output
+- **[mutations](mutations.md)** — watch DOM mutations with attribute tracking
 
 ### State Inspection
 

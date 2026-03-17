@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-17
+
+### Added
+
+- `diff` command — compare two screenshots with pixel-level difference metrics, threshold gating, and diff image output
+- `mutations` command — watch DOM mutations on a CSS selector with polling, attribute tracking, and auto-cleanup
+- `snapshot` command — capture screenshot + DOM tree + page state + storage in a single invocation
+- `dom --text <pattern>` option — find elements by text content (case-insensitive), respects `--first`, `--count`, and selector scoping
+
+### Fixed
+
+- CSS selector escaping in mutation observer now escapes backslashes before single quotes (consistent with bridge client)
+- `dom --text` now scopes search to the provided selector instead of always searching `document.body`
+- `dom --text --first` flag is now respected (was previously ignored)
+- `diff --threshold` now throws a clear error when `identify` fails instead of silently reporting 0%
+
+### Changed
+
+- `buildSerializerScript` exported from `dom.ts` for reuse by `snapshot` command
+- `formatEntry` and `MutationEntry` exported from `mutations.ts`
+- `snapshot` deduplicates window discovery via shared `resolveWindowId` helper
+
 ## [0.2.1] - 2026-03-17
 
 ### Fixed

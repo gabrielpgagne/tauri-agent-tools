@@ -1,6 +1,6 @@
 {
   "name": "tauri-agent-tools",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Agent-driven inspection toolkit for Tauri desktop apps",
   "type": "module",
   "bin": {
@@ -48,6 +48,7 @@
   "devDependencies": {
     "@eslint/js": "^9.0.0",
     "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.0.0",
     "typescript": "^5.8.0",
     "typescript-eslint": "^8.0.0",

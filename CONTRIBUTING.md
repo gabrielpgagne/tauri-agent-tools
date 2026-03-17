@@ -49,7 +49,10 @@ tauri-agent-tools/
 │   │   ├── ipcMonitor.ts       # Tauri IPC call monitoring
 │   │   ├── consoleMonitor.ts   # Console output monitoring
 │   │   ├── storage.ts          # localStorage/sessionStorage/cookies
-│   │   └── pageState.ts        # URL, title, viewport, scroll state
+│   │   ├── pageState.ts        # URL, title, viewport, scroll state
+│   │   ├── diff.ts             # Screenshot comparison
+│   │   ├── mutations.ts        # DOM mutation watching
+│   │   └── snapshot.ts         # Combined capture (screenshot + DOM + state + storage)
 │   ├── platform/
 │   │   ├── detect.ts           # Display server detection, tool checks
 │   │   ├── x11.ts              # X11 adapter

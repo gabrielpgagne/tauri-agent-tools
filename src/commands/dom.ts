@@ -82,7 +82,7 @@ function printTree(node: DomNode, indent: number, maxDepth: number): string[] {
   return lines;
 }
 
-function buildSerializerScript(selector: string, depth: number, includeStyles: boolean): string {
+export function buildSerializerScript(selector: string, depth: number, includeStyles: boolean): string {
   return `(() => {
     function serialize(el, d, maxD, styles) {
       const r = el.getBoundingClientRect();
@@ -140,6 +140,7 @@ export function registerDom(program: Command): void {
     .option('--depth <number>', 'Max child depth', parseInt, 3)
     .option('--tree', 'Compact tree view (default)')
     .option('--styles', 'Include computed styles')
+    .option('--text <pattern>', 'Find elements containing this text (case-insensitive)')
     .option('--count', 'Just output match count')
     .option('--first', 'Only return first match')
     .option('--json', 'Full structured JSON output');
@@ -152,6 +153,7 @@ export function registerDom(program: Command): void {
     depth: number;
     tree?: boolean;
     styles?: boolean;
+    text?: string;
     count?: boolean;
     first?: boolean;
     json?: boolean;
@@ -160,6 +162,68 @@ export function registerDom(program: Command): void {
   }) => {
     const selector = opts.selector ?? selectorArg;
     const bridge = await resolveBridge(opts);
+
+    // Find-by-text mode
+    if (opts.text) {
+      const escapedText = opts.text.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      const escapedSelector = selector.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      const textScript = `(() => {
+        var root = document.querySelector('${escapedSelector}') || document.body;
+        var pattern = '${escapedText}'.toLowerCase();
+        var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+        var seen = new Set();
+        var results = [];
+        while (walker.nextNode()) {
+          var textNode = walker.currentNode;
+          if (textNode.textContent && textNode.textContent.toLowerCase().includes(pattern)) {
+            var el = textNode.parentElement;
+            if (el && !seen.has(el)) {
+              seen.add(el);
+              var r = el.getBoundingClientRect();
+              var node = { tag: el.tagName.toLowerCase(), rect: { width: r.width, height: r.height } };
+              if (el.id) node.id = el.id;
+              var cls = Array.from(el.classList);
+              if (cls.length) node.classes = cls;
+              node.text = el.textContent.trim().substring(0, 100);
+              results.push(node);
+            }
+          }
+        }
+        return JSON.stringify(results);
+      })()`;
+      const raw = await bridge.eval(textScript);
+      const matches: DomNode[] = JSON.parse(String(raw));
+
+      if (opts.count) {
+        console.log(String(matches.length));
+        return;
+      }
+
+      if (opts.first) {
+        if (matches.length === 0) {
+          throw new Error(`No elements found containing "${opts.text}"`);
+        }
+        if (opts.json) {
+          console.log(JSON.stringify(matches[0], null, 2));
+        } else {
+          console.log(formatTreeLine(matches[0], 0));
+        }
+        return;
+      }
+
+      if (opts.json) {
+        console.log(JSON.stringify(matches, null, 2));
+      } else {
+        if (matches.length === 0) {
+          console.log(`No elements found containing "${opts.text}"`);
+        } else {
+          for (const node of matches) {
+            console.log(formatTreeLine(node, 0));
+          }
+        }
+      }
+      return;
+    }
 
     if (opts.mode === 'accessibility') {
       const tree = await bridge.getAccessibilityTree(selector, opts.depth) as A11yNode | null;
