@@ -91,10 +91,12 @@ Query DOM structure from the Tauri app.
 | Option | Description |
 |--------|-------------|
 | `[selector]` | Root element to explore (default: body) |
+| `--mode <mode>` | Output mode: `dom` (default) or `accessibility` |
 | `--depth <number>` | Max child depth (default: 3) |
 | `--tree` | Compact tree view (default) |
 | `--styles` | Include computed styles |
 | `--count` | Just output match count |
+| `--first` | Only return first match |
 | `--json` | Full structured JSON output |
 
 ### `eval`
@@ -125,6 +127,56 @@ Show window geometry and display server info.
 tauri-dev-tools info --title "My App" --json
 ```
 
+### `list-windows`
+
+List all visible windows, marking Tauri apps.
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Output as JSON |
+| `--tauri` | Only show Tauri app windows |
+
+### `ipc-monitor`
+
+Monitor Tauri IPC calls in real-time (read-only). Monkey-patches `window.__TAURI__.core.invoke` to capture calls, then polls and restores on exit.
+
+| Option | Description |
+|--------|-------------|
+| `--filter <command>` | Only show specific IPC commands (supports `*` wildcards) |
+| `--interval <ms>` | Poll interval in milliseconds (default: 500) |
+| `--duration <ms>` | Auto-stop after N milliseconds |
+| `--json` | Output one JSON object per line |
+
+### `console-monitor`
+
+Monitor console output (log/warn/error/info/debug) in real-time. Monkey-patches console methods to capture entries, then polls and restores on exit.
+
+| Option | Description |
+|--------|-------------|
+| `--level <level>` | Filter by level (log, warn, error, info, debug) |
+| `--filter <regex>` | Filter messages by regex pattern |
+| `--interval <ms>` | Poll interval in milliseconds (default: 500) |
+| `--duration <ms>` | Auto-stop after N milliseconds |
+| `--json` | Output one JSON object per line |
+
+### `storage`
+
+Inspect localStorage, sessionStorage, and cookies from the Tauri webview. One-shot read — no writes.
+
+| Option | Description |
+|--------|-------------|
+| `--type <type>` | Storage type: `local`, `session`, `cookies`, `all` (default: all) |
+| `--key <name>` | Get a specific key's value |
+| `--json` | Output as JSON |
+
+### `page-state`
+
+Query webview page state: URL, title, viewport, scroll position, document size, and Tauri detection.
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Output as JSON |
+
 ## How It Works
 
 ```
@@ -151,6 +203,26 @@ The crop accounts for window decoration (title bar, borders) by comparing `windo
 | Linux | Wayland (Sway) | Supported |
 | macOS | CoreGraphics | Supported |
 | Windows | - | Planned |
+
+## Design Decisions
+
+### Why no write operations
+
+All commands are read-only. We don't inject clicks, keystrokes, scroll events, or any input into the Tauri webview. Reasons:
+
+- **Native input injection is risky.** X11 input injection (e.g. via `xdotool`) operates system-wide, not per-window — it can grab the mouse cursor and require a hard reboot to recover.
+- **Simulated events don't work.** `dispatchEvent()` creates events with `isTrusted: false`. Frameworks (React, Vue, Angular) and browsers reject untrusted events for security-sensitive operations.
+- **Input injection is fragile across platforms.** X11 (`xdotool`), Wayland (no global input protocol by design), and macOS (requires Accessibility permission + sandbox restrictions) each have different security models. A cross-platform injection layer would be unreliable.
+- **Read-only is a safer contract for dev tool automation.** Tools that can only observe cannot corrupt application state, trigger unintended side effects, or create security vulnerabilities in CI pipelines.
+
+### Why no MCP server mode
+
+This tool is a CLI that runs commands and exits — not a persistent MCP server. Reasons:
+
+- **No daemon to manage.** No port to monitor, no process to restart, no state to leak between sessions.
+- **No `.mcp.json` auto-start risk.** MCP servers start automatically when a project opens in supporting editors. A dev tool that auto-starts and connects to your running app on project open is a footgun.
+- **No transport complexity.** No WebSocket/stdio state machine, no reconnection logic, no transport-layer bugs.
+- **Composable with any agent framework.** Commands return structured output (`--json`) that any tool-use system can call directly. Define each command as a tool — no MCP SDK dependency required.
 
 ## Safety Guarantees
 

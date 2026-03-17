@@ -12,6 +12,9 @@ import { registerEval } from './commands/eval.js';
 import { registerWait } from './commands/wait.js';
 import { registerListWindows } from './commands/listWindows.js';
 import { registerIpcMonitor } from './commands/ipcMonitor.js';
+import { registerPageState } from './commands/pageState.js';
+import { registerStorage } from './commands/storage.js';
+import { registerConsoleMonitor } from './commands/consoleMonitor.js';
 
 const program = new Command()
   .name('tauri-dev-tools')
@@ -44,6 +47,9 @@ registerEval(program);
 registerWait(program, getAdapter);
 registerListWindows(program, getAdapter);
 registerIpcMonitor(program);
+registerPageState(program);
+registerStorage(program);
+registerConsoleMonitor(program);
 
 program.parseAsync().catch((err: unknown) => {
   console.error(err instanceof Error ? err.message : String(err));
