@@ -1,4 +1,4 @@
-# tauri-dev-tools
+# tauri-agent-tools
 
 DOM-targeted pixel capture for Tauri apps. Screenshot specific DOM elements with real screen pixels — not canvas renders.
 
@@ -12,21 +12,21 @@ Combine a bridge's knowledge of element positions (`getBoundingClientRect`) with
 
 ```bash
 # Screenshot a specific DOM element with real pixels
-tauri-dev-tools screenshot --selector ".wf-toolbar" -o /tmp/toolbar.png
-tauri-dev-tools screenshot --selector "#canvas-area" -o /tmp/canvas.png
+tauri-agent-tools screenshot --selector ".wf-toolbar" -o /tmp/toolbar.png
+tauri-agent-tools screenshot --selector "#canvas-area" -o /tmp/canvas.png
 
 # Explore DOM structure first
-tauri-dev-tools dom --depth 3
-tauri-dev-tools dom ".wf-canvas" --depth 4
+tauri-agent-tools dom --depth 3
+tauri-agent-tools dom ".wf-canvas" --depth 4
 
 # Then screenshot what you found
-tauri-dev-tools screenshot --selector ".wf-canvas .block-node" -o /tmp/block.png
+tauri-agent-tools screenshot --selector ".wf-canvas .block-node" -o /tmp/block.png
 ```
 
 ## Install
 
 ```bash
-npm install -g tauri-dev-tools
+npm install -g tauri-agent-tools
 ```
 
 **System requirements:**
@@ -46,26 +46,26 @@ The bridge runs a localhost-only, token-authenticated HTTP server during develop
 
 ```bash
 # DOM-targeted screenshot (needs bridge)
-tauri-dev-tools screenshot --selector ".toolbar" -o /tmp/toolbar.png
-tauri-dev-tools screenshot --selector "#main-canvas" --max-width 800 -o /tmp/canvas.png
+tauri-agent-tools screenshot --selector ".toolbar" -o /tmp/toolbar.png
+tauri-agent-tools screenshot --selector "#main-canvas" --max-width 800 -o /tmp/canvas.png
 
 # Full window screenshot (no bridge needed, works with any window)
-tauri-dev-tools screenshot --title "My App" -o /tmp/full.png
+tauri-agent-tools screenshot --title "My App" -o /tmp/full.png
 
 # Explore DOM
-tauri-dev-tools dom --depth 3
-tauri-dev-tools dom ".sidebar" --depth 2 --styles
+tauri-agent-tools dom --depth 3
+tauri-agent-tools dom ".sidebar" --depth 2 --styles
 
 # Evaluate JS
-tauri-dev-tools eval "document.title"
-tauri-dev-tools eval "document.querySelectorAll('.item').length"
+tauri-agent-tools eval "document.title"
+tauri-agent-tools eval "document.querySelectorAll('.item').length"
 
 # Wait for conditions
-tauri-dev-tools wait --selector ".toast-message" --timeout 5000
-tauri-dev-tools wait --title "My App" --timeout 10000
+tauri-agent-tools wait --selector ".toast-message" --timeout 5000
+tauri-agent-tools wait --title "My App" --timeout 10000
 
 # Window info
-tauri-dev-tools info --title "My App" --json
+tauri-agent-tools info --title "My App" --json
 ```
 
 ## Commands
@@ -104,7 +104,7 @@ Query DOM structure from the Tauri app.
 Evaluate a JavaScript expression in the Tauri app.
 
 ```bash
-tauri-dev-tools eval "document.title"
+tauri-agent-tools eval "document.title"
 ```
 
 ### `wait`
@@ -124,7 +124,7 @@ Wait for a condition to be met.
 Show window geometry and display server info.
 
 ```bash
-tauri-dev-tools info --title "My App" --json
+tauri-agent-tools info --title "My App" --json
 ```
 
 ### `list-windows`

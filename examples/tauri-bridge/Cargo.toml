@@ -2,7 +2,7 @@
 name = "tauri-dev-bridge-example"
 version = "0.1.0"
 edition = "2021"
-description = "Example Tauri app with dev bridge for tauri-dev-tools"
+description = "Example Tauri app with dev bridge for tauri-agent-tools"
 
 [dependencies]
 tauri = { version = "2", features = ["devtools"] }

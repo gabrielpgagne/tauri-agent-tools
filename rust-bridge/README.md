@@ -1,6 +1,6 @@
 # Tauri Dev Bridge — Integration Guide
 
-The dev bridge is a lightweight HTTP server that runs inside your Tauri app during development. It allows `tauri-dev-tools` to evaluate JavaScript in the webview for DOM-targeted screenshots and inspection.
+The dev bridge is a lightweight HTTP server that runs inside your Tauri app during development. It allows `tauri-agent-tools` to evaluate JavaScript in the webview for DOM-targeted screenshots and inspection.
 
 ## Quick Setup
 
@@ -41,26 +41,26 @@ fn main() {
 }
 ```
 
-### 4. Use tauri-dev-tools
+### 4. Use tauri-agent-tools
 
-The bridge writes a token file to `/tmp/tauri-dev-bridge-<pid>.token` which `tauri-dev-tools` auto-discovers:
+The bridge writes a token file to `/tmp/tauri-dev-bridge-<pid>.token` which `tauri-agent-tools` auto-discovers:
 
 ```bash
 # Screenshot a specific element
-tauri-dev-tools screenshot --selector ".toolbar" -o /tmp/toolbar.png
+tauri-agent-tools screenshot --selector ".toolbar" -o /tmp/toolbar.png
 
 # Explore the DOM
-tauri-dev-tools dom --depth 3
+tauri-agent-tools dom --depth 3
 
 # Evaluate JS
-tauri-dev-tools eval "document.title"
+tauri-agent-tools eval "document.title"
 ```
 
 ## How It Works
 
 1. Bridge starts an HTTP server on a random localhost port
 2. A token file with `{ port, token, pid }` is written to `/tmp/`
-3. `tauri-dev-tools` discovers the token file and authenticates via the token
+3. `tauri-agent-tools` discovers the token file and authenticates via the token
 4. Requests are `POST /eval { js, token }` — the bridge evaluates JS in the webview
 5. The token file is cleaned up when the app exits
 
@@ -69,4 +69,4 @@ tauri-dev-tools eval "document.title"
 - **Localhost only** — the bridge binds to `127.0.0.1`
 - **Token authenticated** — every request requires a random 32-char token
 - **Development only** — wrapped in `cfg!(debug_assertions)`, stripped in release builds
-- **Read-only** — `tauri-dev-tools` only reads DOM state, never injects input
+- **Read-only** — `tauri-agent-tools` only reads DOM state, never injects input

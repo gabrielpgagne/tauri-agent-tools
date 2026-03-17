@@ -17,7 +17,7 @@ import { registerStorage } from './commands/storage.js';
 import { registerConsoleMonitor } from './commands/consoleMonitor.js';
 
 const program = new Command()
-  .name('tauri-dev-tools')
+  .name('tauri-agent-tools')
   .description('DOM-targeted pixel capture for Tauri apps')
   .version('0.1.0');
 
