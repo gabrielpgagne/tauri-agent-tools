@@ -1,0 +1,71 @@
+site_name: tauri-agent-tools
+site_description: Agent-driven inspection toolkit for Tauri desktop apps
+site_url: https://cesarandreslopez.github.io/tauri-agent-tools/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - content.code.copy
+    - content.tabs.link
+    - navigation.sections
+    - navigation.expand
+    - search.suggest
+    - search.highlight
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - attr_list
+  - md_in_html
+  - tables
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quick-start.md
+    - Bridge Setup: getting-started/bridge-setup.md
+  - Commands:
+    - Overview: commands/index.md
+    - screenshot: commands/screenshot.md
+    - dom: commands/dom.md
+    - eval: commands/eval.md
+    - wait: commands/wait.md
+    - info: commands/info.md
+    - list-windows: commands/list-windows.md
+    - ipc-monitor: commands/ipc-monitor.md
+    - console-monitor: commands/console-monitor.md
+    - storage: commands/storage.md
+    - page-state: commands/page-state.md
+  - Platform Support: platform-support.md
+  - Architecture:
+    - Overview: architecture/overview.md
+    - Bridge Protocol: architecture/bridge-protocol.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md

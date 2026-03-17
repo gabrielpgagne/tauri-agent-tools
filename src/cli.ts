@@ -18,7 +18,7 @@ import { registerConsoleMonitor } from './commands/consoleMonitor.js';
 
 const program = new Command()
   .name('tauri-agent-tools')
-  .description('DOM-targeted pixel capture for Tauri apps')
+  .description('Agent-driven inspection toolkit for Tauri desktop apps')
   .version('0.1.0');
 
 let checkedTools: DisplayServer | null = null;

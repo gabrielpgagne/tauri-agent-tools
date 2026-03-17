@@ -12,10 +12,6 @@ interface CGWindowInfo {
   kCGWindowBounds: { X: number; Y: number; Width: number; Height: number };
 }
 
-function escapeJxaString(s: string): string {
-  return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-}
-
 async function runJxa(script: string): Promise<string> {
   const { stdout } = await exec('osascript', ['-l', 'JavaScript', '-e', script]);
   return stdout.toString().trim();
@@ -68,8 +64,6 @@ async function normalizeRetina(filePath: string, logicalWidth: number): Promise<
 export class MacOSAdapter implements PlatformAdapter {
   async findWindow(title: string): Promise<string> {
     const windows = await getWindowList();
-    const escaped = escapeJxaString(title);
-    // Use the unescaped title for matching — escapeJxaString is for JXA embedding only
     const match = windows.find(
       (w) => (w.kCGWindowName && w.kCGWindowName.includes(title)) ||
              (w.kCGWindowOwnerName && w.kCGWindowOwnerName.includes(title)),

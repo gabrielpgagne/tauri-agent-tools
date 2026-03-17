@@ -1,6 +1,18 @@
+<div align="center">
+
 # tauri-agent-tools
 
-DOM-targeted pixel capture for Tauri apps. Screenshot specific DOM elements with real screen pixels — not canvas renders.
+**Agent-driven inspection toolkit for Tauri desktop apps**
+
+11 read-only commands to screenshot, inspect, and monitor Tauri apps from the CLI.
+
+[![CI](https://github.com/cesarandreslopez/tauri-agent-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/cesarandreslopez/tauri-agent-tools/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/tauri-agent-tools.svg)](https://www.npmjs.com/package/tauri-agent-tools)
+[![npm downloads](https://img.shields.io/npm/dm/tauri-agent-tools.svg)](https://www.npmjs.com/package/tauri-agent-tools)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node >= 20](https://img.shields.io/badge/Node-%3E%3D20-green.svg)](https://nodejs.org)
+
+</div>
 
 ## The Problem
 
@@ -288,6 +300,17 @@ cp -r "$(npm root -g)/tauri-agent-tools/.agents" .agents
 Any [agentskills.io](https://agentskills.io)-compatible agent can read the skills from `.agents/skills/` in this package. Install globally or locally and point the agent at the skill directory.
 </details>
 
+## Documentation
+
+Full documentation is available at the [docs site](https://cesarandreslopez.github.io/tauri-agent-tools/):
+
+- [Installation](https://cesarandreslopez.github.io/tauri-agent-tools/getting-started/installation/) — system requirements and setup
+- [Quick Start](https://cesarandreslopez.github.io/tauri-agent-tools/getting-started/quick-start/) — get running in 5 minutes
+- [Bridge Setup](https://cesarandreslopez.github.io/tauri-agent-tools/getting-started/bridge-setup/) — integrate the Rust bridge into your Tauri app
+- [Command Reference](https://cesarandreslopez.github.io/tauri-agent-tools/commands/) — all 11 commands with examples
+- [Platform Support](https://cesarandreslopez.github.io/tauri-agent-tools/platform-support/) — X11, Wayland, macOS details
+- [Architecture](https://cesarandreslopez.github.io/tauri-agent-tools/architecture/overview/) — how it works under the hood
+
 ## Development
 
 ```bash
@@ -295,6 +318,20 @@ npm install
 npm run build
 npm test
 ```
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+
+- Development setup and prerequisites
+- Code style and conventions
+- Branch naming and commit message format
+- Pull request process
+
+## Community
+
+- [Open an issue](https://github.com/cesarandreslopez/tauri-agent-tools/issues) for bugs or feature requests
+- Star the repo if you find it useful
 
 ## License
 

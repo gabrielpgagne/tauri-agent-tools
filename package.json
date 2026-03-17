@@ -1,7 +1,7 @@
 {
   "name": "tauri-agent-tools",
   "version": "0.1.0",
-  "description": "DOM-targeted pixel capture for Tauri apps",
+  "description": "Agent-driven inspection toolkit for Tauri desktop apps",
   "type": "module",
   "bin": {
     "tauri-agent-tools": "./dist/cli.js"
@@ -9,16 +9,48 @@
   "main": "./dist/cli.js",
   "scripts": {
     "build": "tsc",
+    "clean": "rm -rf dist",
     "test": "vitest run",
     "test:watch": "vitest",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cesarandreslopez/tauri-agent-tools"
+  },
+  "homepage": "https://cesarandreslopez.github.io/tauri-agent-tools/",
+  "bugs": {
+    "url": "https://github.com/cesarandreslopez/tauri-agent-tools/issues"
+  },
+  "keywords": [
+    "tauri",
+    "screenshot",
+    "dom-inspection",
+    "desktop-app",
+    "cli",
+    "agent-tools",
+    "devtools",
+    "cross-platform"
+  ],
+  "author": {
+    "name": "Cesar Andres Lopez",
+    "email": "cesarandreslopez@gmail.com"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "commander": "^14.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.0.0",
     "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
     "typescript": "^5.8.0",
+    "typescript-eslint": "^8.0.0",
     "vitest": "^3.1.0"
   },
   "engines": {
