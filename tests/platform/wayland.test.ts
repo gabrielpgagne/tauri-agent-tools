@@ -21,6 +21,7 @@ const swayTree = {
       nodes: [
         {
           id: 100,
+          pid: 5001,
           name: 'My Tauri App',
           rect: { x: 50, y: 100, width: 800, height: 600 },
           nodes: [],
@@ -28,6 +29,7 @@ const swayTree = {
         },
         {
           id: 101,
+          pid: 5002,
           name: 'Firefox',
           rect: { x: 900, y: 100, width: 1000, height: 900 },
           nodes: [],
@@ -98,6 +100,72 @@ describe('WaylandAdapter', () => {
       await expect(adapter.getWindowGeometry('999')).rejects.toThrow(
         'Window 999 not found in sway tree',
       );
+    });
+  });
+
+  describe('listWindows', () => {
+    it('returns all leaf nodes with names and PIDs', async () => {
+      mockExec.mockResolvedValue({
+        stdout: Buffer.from(JSON.stringify(swayTree)),
+        stderr: '',
+      });
+
+      const windows = await adapter.listWindows();
+      expect(windows).toHaveLength(2);
+      expect(windows[0]).toEqual({
+        windowId: '100',
+        pid: 5001,
+        name: 'My Tauri App',
+        x: 50,
+        y: 100,
+        width: 800,
+        height: 600,
+      });
+      expect(windows[1]).toEqual({
+        windowId: '101',
+        pid: 5002,
+        name: 'Firefox',
+        x: 900,
+        y: 100,
+        width: 1000,
+        height: 900,
+      });
+    });
+
+    it('filters out nodes without names', async () => {
+      const treeWithNullName = {
+        id: 1,
+        name: null,
+        rect: { x: 0, y: 0, width: 1920, height: 1080 },
+        nodes: [
+          {
+            id: 10,
+            pid: 3001,
+            name: null,
+            rect: { x: 0, y: 0, width: 100, height: 100 },
+            nodes: [],
+            floating_nodes: [],
+          },
+          {
+            id: 11,
+            pid: 3002,
+            name: 'Visible App',
+            rect: { x: 0, y: 0, width: 800, height: 600 },
+            nodes: [],
+            floating_nodes: [],
+          },
+        ],
+        floating_nodes: [],
+      };
+
+      mockExec.mockResolvedValue({
+        stdout: Buffer.from(JSON.stringify(treeWithNullName)),
+        stderr: '',
+      });
+
+      const windows = await adapter.listWindows();
+      expect(windows).toHaveLength(1);
+      expect(windows[0].name).toBe('Visible App');
     });
   });
 

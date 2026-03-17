@@ -3,6 +3,7 @@ import { exec } from '../util/exec.js';
 
 interface SwayNode {
   id: number;
+  pid?: number;
   name: string | null;
   rect: { x: number; y: number; width: number; height: number };
   nodes?: SwayNode[];
@@ -62,6 +63,36 @@ export class WaylandAdapter implements PlatformAdapter {
   async getWindowName(windowId: string): Promise<string> {
     const geom = await this.getWindowGeometry(windowId);
     return geom.name ?? '';
+  }
+
+  async listWindows(): Promise<WindowInfo[]> {
+    const { stdout } = await exec('swaymsg', ['-t', 'get_tree', '-r']);
+    const tree: SwayNode = JSON.parse(stdout.toString());
+    const leaves: SwayNode[] = [];
+    this._collectLeaves(tree, leaves);
+
+    return leaves
+      .filter((n) => n.name)
+      .map((n) => ({
+        windowId: String(n.id),
+        pid: n.pid,
+        name: n.name ?? undefined,
+        x: n.rect.x,
+        y: n.rect.y,
+        width: n.rect.width,
+        height: n.rect.height,
+      }));
+  }
+
+  private _collectLeaves(node: SwayNode, out: SwayNode[]): void {
+    const children = [...(node.nodes ?? []), ...(node.floating_nodes ?? [])];
+    if (children.length === 0 && node.name) {
+      out.push(node);
+      return;
+    }
+    for (const child of children) {
+      this._collectLeaves(child, out);
+    }
   }
 
   private _findById(node: SwayNode, id: number): SwayNode | null {

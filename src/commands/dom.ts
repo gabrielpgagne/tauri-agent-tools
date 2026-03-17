@@ -12,6 +12,48 @@ interface DomNode {
   children?: DomNode[];
 }
 
+interface A11yNode {
+  role: string;
+  name?: string;
+  state?: Record<string, unknown>;
+  children?: A11yNode[];
+}
+
+function formatA11yLine(node: A11yNode, indent: number): string {
+  let line = '  '.repeat(indent);
+  line += `[${node.role}]`;
+  if (node.name) {
+    const truncated = node.name.length > 50 ? node.name.slice(0, 47) + '...' : node.name;
+    line += ` "${truncated}"`;
+  }
+  if (node.state) {
+    const parts: string[] = [];
+    for (const [key, value] of Object.entries(node.state)) {
+      if (key === 'level') {
+        parts.push(`level=${value}`);
+      } else if (key === 'current') {
+        parts.push(`current`);
+      } else if (value === true) {
+        parts.push(key);
+      } else if (value === false) {
+        parts.push(`not ${key}`);
+      }
+    }
+    if (parts.length) line += ` (${parts.join(', ')})`;
+  }
+  return line;
+}
+
+function printA11yTree(node: A11yNode, indent: number, maxDepth: number): string[] {
+  const lines: string[] = [formatA11yLine(node, indent)];
+  if (indent < maxDepth && node.children) {
+    for (const child of node.children) {
+      lines.push(...printA11yTree(child, indent + 1, maxDepth));
+    }
+  }
+  return lines;
+}
+
 function formatTreeLine(node: DomNode, indent: number): string {
   let line = '  '.repeat(indent);
   line += node.tag;
@@ -94,6 +136,7 @@ export function registerDom(program: Command): void {
     .description('Query DOM structure from the Tauri app')
     .argument('[selector]', 'Root element to explore', 'body')
     .option('-s, --selector <css>', 'Root element to explore (alternative)')
+    .option('--mode <mode>', 'Output mode: dom (default) or accessibility', 'dom')
     .option('--depth <number>', 'Max child depth', parseInt, 3)
     .option('--tree', 'Compact tree view (default)')
     .option('--styles', 'Include computed styles')
@@ -105,6 +148,7 @@ export function registerDom(program: Command): void {
 
   cmd.action(async (selectorArg: string, opts: {
     selector?: string;
+    mode: string;
     depth: number;
     tree?: boolean;
     styles?: boolean;
@@ -116,6 +160,20 @@ export function registerDom(program: Command): void {
   }) => {
     const selector = opts.selector ?? selectorArg;
     const bridge = await resolveBridge(opts);
+
+    if (opts.mode === 'accessibility') {
+      const tree = await bridge.getAccessibilityTree(selector, opts.depth) as A11yNode | null;
+      if (!tree) {
+        throw new Error(`Element not found: ${selector}`);
+      }
+      if (opts.json) {
+        console.log(JSON.stringify(tree, null, 2));
+      } else {
+        const lines = printA11yTree(tree, 0, opts.depth);
+        console.log(lines.join('\n'));
+      }
+      return;
+    }
 
     const escaped = selector.replace(/'/g, "\\'");
 

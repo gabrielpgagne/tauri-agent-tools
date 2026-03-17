@@ -6,6 +6,7 @@ import { exec, validateWindowId } from '../util/exec.js';
 
 interface CGWindowInfo {
   kCGWindowNumber: number;
+  kCGWindowOwnerPID?: number;
   kCGWindowName?: string;
   kCGWindowOwnerName?: string;
   kCGWindowBounds: { X: number; Y: number; Width: number; Height: number };
@@ -29,6 +30,7 @@ var list = ObjC.deepUnwrap(
 JSON.stringify(list.map(function(w) {
   return {
     kCGWindowNumber: w.kCGWindowNumber,
+    kCGWindowOwnerPID: w.kCGWindowOwnerPID || 0,
     kCGWindowName: w.kCGWindowName || '',
     kCGWindowOwnerName: w.kCGWindowOwnerName || '',
     kCGWindowBounds: w.kCGWindowBounds
@@ -127,5 +129,20 @@ export class MacOSAdapter implements PlatformAdapter {
   async getWindowName(windowId: string): Promise<string> {
     const geom = await this.getWindowGeometry(windowId);
     return geom.name ?? '';
+  }
+
+  async listWindows(): Promise<WindowInfo[]> {
+    const windows = await getWindowList();
+    return windows
+      .filter((w) => w.kCGWindowName || w.kCGWindowOwnerName)
+      .map((w) => ({
+        windowId: String(w.kCGWindowNumber),
+        pid: w.kCGWindowOwnerPID || undefined,
+        name: w.kCGWindowName || w.kCGWindowOwnerName || undefined,
+        x: w.kCGWindowBounds.X,
+        y: w.kCGWindowBounds.Y,
+        width: w.kCGWindowBounds.Width,
+        height: w.kCGWindowBounds.Height,
+      }));
   }
 }

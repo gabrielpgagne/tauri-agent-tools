@@ -105,6 +105,93 @@ describe('X11Adapter', () => {
     });
   });
 
+  describe('listWindows', () => {
+    it('returns all windows with names and PIDs', async () => {
+      // xdotool search --name ''
+      mockExec.mockResolvedValueOnce({
+        stdout: Buffer.from('111\n222\n333\n'),
+        stderr: '',
+      });
+
+      // Window 111: name + geom + pid
+      mockExec.mockResolvedValueOnce({ stdout: Buffer.from('My App\n'), stderr: '' });
+      mockExec.mockResolvedValueOnce({
+        stdout: Buffer.from('WINDOW=111\nX=0\nY=0\nWIDTH=800\nHEIGHT=600\n'),
+        stderr: '',
+      });
+      mockExec.mockResolvedValueOnce({ stdout: Buffer.from('1001\n'), stderr: '' });
+
+      // Window 222: empty name (should be filtered out)
+      mockExec.mockResolvedValueOnce({ stdout: Buffer.from('\n'), stderr: '' });
+      mockExec.mockResolvedValueOnce({
+        stdout: Buffer.from('WINDOW=222\nX=0\nY=0\nWIDTH=100\nHEIGHT=100\n'),
+        stderr: '',
+      });
+      mockExec.mockResolvedValueOnce({ stdout: Buffer.from('1002\n'), stderr: '' });
+
+      // Window 333: name + geom + pid
+      mockExec.mockResolvedValueOnce({ stdout: Buffer.from('Firefox\n'), stderr: '' });
+      mockExec.mockResolvedValueOnce({
+        stdout: Buffer.from('WINDOW=333\nX=100\nY=100\nWIDTH=1200\nHEIGHT=900\n'),
+        stderr: '',
+      });
+      mockExec.mockResolvedValueOnce({ stdout: Buffer.from('1003\n'), stderr: '' });
+
+      const windows = await adapter.listWindows();
+      expect(windows).toHaveLength(2);
+      expect(windows[0]).toEqual({
+        windowId: '111',
+        pid: 1001,
+        name: 'My App',
+        x: 0,
+        y: 0,
+        width: 800,
+        height: 600,
+      });
+      expect(windows[1]).toEqual({
+        windowId: '333',
+        pid: 1003,
+        name: 'Firefox',
+        x: 100,
+        y: 100,
+        width: 1200,
+        height: 900,
+      });
+    });
+
+    it('skips windows that throw errors', async () => {
+      // xdotool search --name ''
+      mockExec.mockResolvedValueOnce({
+        stdout: Buffer.from('111\n222\n'),
+        stderr: '',
+      });
+
+      // Window 111: all three calls fail (Promise.all rejects)
+      mockExec.mockRejectedValueOnce(new Error('window gone'));
+      mockExec.mockRejectedValueOnce(new Error('window gone'));
+      mockExec.mockRejectedValueOnce(new Error('window gone'));
+
+      // Window 222: succeeds
+      mockExec.mockResolvedValueOnce({ stdout: Buffer.from('App\n'), stderr: '' });
+      mockExec.mockResolvedValueOnce({
+        stdout: Buffer.from('WINDOW=222\nX=0\nY=0\nWIDTH=640\nHEIGHT=480\n'),
+        stderr: '',
+      });
+      mockExec.mockResolvedValueOnce({ stdout: Buffer.from('2002\n'), stderr: '' });
+
+      const windows = await adapter.listWindows();
+      expect(windows).toHaveLength(1);
+      expect(windows[0].name).toBe('App');
+    });
+
+    it('returns empty array when no windows exist', async () => {
+      mockExec.mockResolvedValueOnce({ stdout: Buffer.from(''), stderr: '' });
+
+      const windows = await adapter.listWindows();
+      expect(windows).toHaveLength(0);
+    });
+  });
+
   describe('window ID validation', () => {
     it('rejects non-numeric window IDs', async () => {
       await expect(adapter.captureWindow('abc', 'png')).rejects.toThrow(

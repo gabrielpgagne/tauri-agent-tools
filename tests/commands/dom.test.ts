@@ -62,7 +62,96 @@ describe('DOM command', () => {
       expect(line).toBe('      span (50x20)');
     });
   });
+
+  describe('accessibility tree formatting', () => {
+    it('formats a basic a11y node', () => {
+      const node = { role: 'button', name: 'Submit' };
+      const line = formatA11yNode(node, 0);
+      expect(line).toBe('[button] "Submit"');
+    });
+
+    it('formats node with state', () => {
+      const node = { role: 'checkbox', name: 'Accept terms', state: { checked: true, required: true } };
+      const line = formatA11yNode(node, 0);
+      expect(line).toBe('[checkbox] "Accept terms" (checked, required)');
+    });
+
+    it('formats heading with level', () => {
+      const node = { role: 'heading', name: 'Dashboard', state: { level: 2 } };
+      const line = formatA11yNode(node, 0);
+      expect(line).toBe('[heading] "Dashboard" (level=2)');
+    });
+
+    it('formats node without name', () => {
+      const node = { role: 'list' };
+      const line = formatA11yNode(node, 0);
+      expect(line).toBe('[list]');
+    });
+
+    it('formats current link', () => {
+      const node = { role: 'link', name: 'Home', state: { current: 'page' } };
+      const line = formatA11yNode(node, 0);
+      expect(line).toBe('[link] "Home" (current)');
+    });
+
+    it('formats disabled state', () => {
+      const node = { role: 'button', name: 'Save', state: { disabled: true } };
+      const line = formatA11yNode(node, 0);
+      expect(line).toBe('[button] "Save" (disabled)');
+    });
+
+    it('indents nested a11y nodes', () => {
+      const node = { role: 'listitem', name: 'Item 1' };
+      const line = formatA11yNode(node, 2);
+      expect(line).toBe('    [listitem] "Item 1"');
+    });
+
+    it('truncates long names', () => {
+      const node = { role: 'paragraph', name: 'A'.repeat(60) };
+      const line = formatA11yNode(node, 0);
+      expect(line).toContain('...');
+      expect(line).toContain('[paragraph]');
+    });
+
+    it('formats not expanded state', () => {
+      const node = { role: 'button', name: 'Menu', state: { expanded: false } };
+      const line = formatA11yNode(node, 0);
+      expect(line).toBe('[button] "Menu" (not expanded)');
+    });
+  });
 });
+
+// Helper for a11y node formatting (mirrors dom.ts implementation)
+interface TestA11yNode {
+  role: string;
+  name?: string;
+  state?: Record<string, unknown>;
+}
+
+function formatA11yNode(node: TestA11yNode, indent: number): string {
+  let line = '  '.repeat(indent);
+  line += `[${node.role}]`;
+  if (node.name) {
+    const truncated = node.name.length > 50 ? node.name.slice(0, 47) + '...' : node.name;
+    line += ` "${truncated}"`;
+  }
+  if (node.state) {
+    const parts: string[] = [];
+    for (const [key, value] of Object.entries(node.state)) {
+      if (key === 'level') {
+        parts.push(`level=${value}`);
+      } else if (key === 'current') {
+        parts.push('current');
+      } else if (value === true) {
+        parts.push(key);
+      } else if (value === false) {
+        parts.push(`not ${key}`);
+      }
+    }
+    if (parts.length) line += ` (${parts.join(', ')})`;
+  }
+  return line;
+}
 
 // Helper to test formatting logic directly (mirrors the dom.ts implementation)
 interface TestNode {

@@ -27,12 +27,14 @@ const mockRm = vi.mocked(rm);
 const windowList = [
   {
     kCGWindowNumber: 1234,
+    kCGWindowOwnerPID: 4001,
     kCGWindowName: 'My Tauri App',
     kCGWindowOwnerName: 'MyApp',
     kCGWindowBounds: { X: 100, Y: 200, Width: 800, Height: 600 },
   },
   {
     kCGWindowNumber: 5678,
+    kCGWindowOwnerPID: 4002,
     kCGWindowName: 'Safari',
     kCGWindowOwnerName: 'Safari',
     kCGWindowBounds: { X: 50, Y: 50, Width: 1200, Height: 900 },
@@ -175,6 +177,53 @@ describe('MacOSAdapter', () => {
 
       const name = await adapter.getWindowName('1234');
       expect(name).toBe('My Tauri App');
+    });
+  });
+
+  describe('listWindows', () => {
+    it('returns all windows with names and PIDs', async () => {
+      mockJxaWindowList();
+
+      const windows = await adapter.listWindows();
+      expect(windows).toHaveLength(2);
+      expect(windows[0]).toEqual({
+        windowId: '1234',
+        pid: 4001,
+        name: 'My Tauri App',
+        x: 100,
+        y: 200,
+        width: 800,
+        height: 600,
+      });
+      expect(windows[1]).toEqual({
+        windowId: '5678',
+        pid: 4002,
+        name: 'Safari',
+        x: 50,
+        y: 50,
+        width: 1200,
+        height: 900,
+      });
+    });
+
+    it('filters out windows without names', async () => {
+      const mixedWindows = [
+        ...windowList,
+        {
+          kCGWindowNumber: 9999,
+          kCGWindowOwnerPID: 4003,
+          kCGWindowName: '',
+          kCGWindowOwnerName: '',
+          kCGWindowBounds: { X: 0, Y: 0, Width: 100, Height: 100 },
+        },
+      ];
+      mockExec.mockResolvedValueOnce({
+        stdout: Buffer.from(JSON.stringify(mixedWindows)),
+        stderr: '',
+      });
+
+      const windows = await adapter.listWindows();
+      expect(windows).toHaveLength(2); // The nameless one is filtered
     });
   });
 

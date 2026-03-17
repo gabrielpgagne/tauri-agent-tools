@@ -43,4 +43,46 @@ export class X11Adapter implements PlatformAdapter {
     const { stdout } = await exec('xdotool', ['getwindowname', windowId]);
     return stdout.toString().trim();
   }
+
+  async listWindows(): Promise<WindowInfo[]> {
+    const { stdout } = await exec('xdotool', ['search', '--name', '']);
+    const ids = stdout.toString().trim().split('\n').filter(Boolean);
+
+    const windows: WindowInfo[] = [];
+    for (const id of ids) {
+      try {
+        const [nameResult, geomResult, pidResult] = await Promise.all([
+          exec('xdotool', ['getwindowname', id]),
+          exec('xdotool', ['getwindowgeometry', '--shell', id]),
+          exec('xdotool', ['getwindowpid', id]),
+        ]);
+
+        const name = nameResult.stdout.toString().trim();
+        if (!name) continue;
+
+        const geomOutput = geomResult.stdout.toString();
+        const parse = (key: string): number => {
+          const match = geomOutput.match(new RegExp(`${key}=(\\d+)`));
+          return match ? parseInt(match[1], 10) : 0;
+        };
+
+        const pid = parseInt(pidResult.stdout.toString().trim(), 10);
+
+        windows.push({
+          windowId: id,
+          pid: isNaN(pid) ? undefined : pid,
+          name,
+          x: parse('X'),
+          y: parse('Y'),
+          width: parse('WIDTH'),
+          height: parse('HEIGHT'),
+        });
+      } catch {
+        // Skip windows that disappeared or can't be queried
+        continue;
+      }
+    }
+
+    return windows;
+  }
 }
