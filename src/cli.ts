@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 import { Command } from 'commander';
 import type { DisplayServer, PlatformAdapter } from './types.js';
 import { detectDisplayServer, ensureTools } from './platform/detect.js';
@@ -16,10 +19,13 @@ import { registerPageState } from './commands/pageState.js';
 import { registerStorage } from './commands/storage.js';
 import { registerConsoleMonitor } from './commands/consoleMonitor.js';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(resolve(__dirname, '..', 'package.json'), 'utf-8'));
+
 const program = new Command()
   .name('tauri-agent-tools')
   .description('Agent-driven inspection toolkit for Tauri desktop apps')
-  .version('0.1.0');
+  .version(pkg.version);
 
 let checkedTools: DisplayServer | null = null;
 
