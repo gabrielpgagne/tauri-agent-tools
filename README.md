@@ -235,6 +235,59 @@ This tool is a CLI that runs commands and exits — not a persistent MCP server.
 - **`execFile` (array args)** — never `exec` (shell string), prevents command injection
 - **Window ID validated** — must match `/^\d+$/`
 
+## Agent Integration
+
+This package ships [Agent Skills](https://agentskills.io) so AI coding agents can automatically learn how to use the CLI and set up the bridge.
+
+| Skill | Description |
+|-------|-------------|
+| `tauri-agent-tools` | Using all 11 CLI commands to inspect Tauri apps |
+| `tauri-bridge-setup` | Adding the Rust dev bridge to a Tauri project |
+
+<details>
+<summary><strong>Claude Code</strong></summary>
+
+Claude Code auto-discovers skills from `.agents/skills/` in the current project. If you installed `tauri-agent-tools` globally and want skills available everywhere:
+
+```bash
+cp -r "$(npm root -g)/tauri-agent-tools/.agents" ~/.agents
+```
+</details>
+
+<details>
+<summary><strong>Codex</strong></summary>
+
+Codex reads `AGENTS.md` at the repo root and skills from `node_modules`. Install locally:
+
+```bash
+npm install tauri-agent-tools
+```
+
+Codex will pick up `AGENTS.md` and `.agents/skills/` automatically.
+</details>
+
+<details>
+<summary><strong>Cursor / VS Code Copilot</strong></summary>
+
+Copy skills into your project so the agent can discover them:
+
+```bash
+cp -r node_modules/tauri-agent-tools/.agents .agents
+```
+
+Or if installed globally:
+
+```bash
+cp -r "$(npm root -g)/tauri-agent-tools/.agents" .agents
+```
+</details>
+
+<details>
+<summary><strong>Other agents</strong></summary>
+
+Any [agentskills.io](https://agentskills.io)-compatible agent can read the skills from `.agents/skills/` in this package. Install globally or locally and point the agent at the skill directory.
+</details>
+
 ## Development
 
 ```bash

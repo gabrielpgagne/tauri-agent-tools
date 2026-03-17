@@ -70,3 +70,11 @@ tauri-agent-tools eval "document.title"
 - **Token authenticated** — every request requires a random 32-char token
 - **Development only** — wrapped in `cfg!(debug_assertions)`, stripped in release builds
 - **Read-only** — `tauri-agent-tools` only reads DOM state, never injects input
+
+## Agent-Assisted Setup
+
+If you're using an AI coding agent (Claude Code, Codex, Cursor, etc.), the `tauri-bridge-setup` skill can guide automated setup. See `.agents/skills/tauri-bridge-setup/SKILL.md` or run:
+
+```bash
+cat "$(npm root -g)/tauri-agent-tools/.agents/skills/tauri-bridge-setup/SKILL.md"
+```

@@ -24,5 +24,15 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "files": [
+    "dist/",
+    "rust-bridge/",
+    "examples/",
+    ".agents/",
+    "AGENTS.md"
+  ],
+  "agents": {
+    "skills": ".agents/skills"
+  },
   "license": "MIT"
 }
