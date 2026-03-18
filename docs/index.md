@@ -7,6 +7,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/cesarandreslopez/tauri-agent-tools/blob/main/LICENSE)
 [![Node >= 20](https://img.shields.io/badge/Node-%3E%3D20-green.svg)](https://nodejs.org)
 
+![tauri-agent-tools](../assets/social-preview.png)
+
 ## The Problem
 
 Debugging frontend issues in Tauri desktop apps requires manually screenshotting, cropping, and describing what you see. Existing tools either hijack your cursor (xcap-based), render DOM to canvas (html2canvas — can't capture WebGL/video/canvas elements), or have no authentication.

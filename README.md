@@ -12,6 +12,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node >= 20](https://img.shields.io/badge/Node-%3E%3D20-green.svg)](https://nodejs.org)
 
+![tauri-agent-tools](assets/social-preview.png)
+
 </div>
 
 ## The Problem
