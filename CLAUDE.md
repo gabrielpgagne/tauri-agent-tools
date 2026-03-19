@@ -62,7 +62,7 @@ npx vitest run tests/commands/screenshot.test.ts
 - **Security:** Uses `execFile()` with array args everywhere — never `exec()` with shell strings. Window IDs validated with `/^\d+$/` before use.
 - **No write operations:** No input injection, no state modification. This is a deliberate design choice, not a limitation.
 - **Node >=20 required:** Uses native `fetch()` (no HTTP library dependency).
-- **TypeScript strict mode** with declarations generated to `dist/`.
+- **TypeScript strict mode** with `noUncheckedIndexedAccess`, `noImplicitReturns`, `noFallthroughCasesInSwitch` enabled. Declarations generated to `dist/`.
 - **Tests use vitest globals:** `describe`, `it`, `expect` available without imports.
 
 ## Conventions
@@ -82,19 +82,22 @@ npx vitest run tests/commands/screenshot.test.ts
 4. Tag: `git tag v<version>` on `main`
 5. Publish: `npm publish`
 
-## Refactoring Status
+## Module Dependency DAG
 
-**Phase 3 complete.** The monolithic `src/schemas.ts` has been split into `src/schemas/` with 4 domain-focused files. All consumers updated. See `specs/schemas/progress.md` for details.
+```
+cli.ts ──────────────────────────────┐
+  │                                  │
+  ├──→ commands/ ──┬──→ bridge/ ─────┤
+  │                │                 │
+  ├──→ platform/ ──┤                 │
+  │                │                 │
+  │                └──→ util/ ───────┤
+  │                                  │
+  └──────────────────────→ schemas/ ◄┘
+                           types.ts ◄── schemas/
+```
 
-### Schema Module Structure
-
-| File | Purpose |
-|------|---------|
-| `src/schemas/index.ts` | Barrel re-exports from all domain files |
-| `src/schemas/bridge.ts` | Bridge protocol schemas (TokenFile, BridgeConfig, ElementRect, RustLogEntry, etc.) |
-| `src/schemas/dom.ts` | Recursive DOM/a11y tree schemas (DomNode, A11yNode) |
-| `src/schemas/commands.ts` | CLI option and output schemas (ImageFormat, StorageEntry, ConsoleEntry, etc.) |
-| `src/schemas/platform.ts` | Platform-specific schemas (WindowId, CGWindowInfo, SwayNode) |
+Dependencies flow strictly downward. Enforced by `scripts/check-imports.mjs`.
 
 ### Import Conventions
 
@@ -106,7 +109,7 @@ npx vitest run tests/commands/screenshot.test.ts
 
 ```bash
 npx tsc --noEmit                              # Type check
-npm test                                      # All tests (287 tests, 27 files)
+npm test                                      # All tests (309 tests, 28 files)
 node scripts/check-imports.mjs                # Import DAG linter
 npx madge --circular --extensions ts,tsx src/  # Circular dependency check
 ```
