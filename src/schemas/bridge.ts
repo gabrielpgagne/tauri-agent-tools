@@ -20,8 +20,8 @@ export const ElementRectSchema = z.object({
 export type ElementRect = z.infer<typeof ElementRectSchema>;
 
 export const BridgeConfigSchema = z.object({
-  port: z.number(),
-  token: z.string(),
+  port: z.number().int().min(1).max(65535),
+  token: z.string().min(1),
 });
 export type BridgeConfig = z.infer<typeof BridgeConfigSchema>;
 

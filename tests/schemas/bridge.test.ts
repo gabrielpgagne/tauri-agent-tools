@@ -46,6 +46,19 @@ describe('BridgeConfigSchema', () => {
     const config = { port: 9999, token: 'test-token' };
     expect(BridgeConfigSchema.parse(config)).toEqual(config);
   });
+
+  it('rejects port out of range', () => {
+    expect(() => BridgeConfigSchema.parse({ port: 0, token: 'x' })).toThrow();
+    expect(() => BridgeConfigSchema.parse({ port: 70000, token: 'x' })).toThrow();
+  });
+
+  it('rejects non-integer port', () => {
+    expect(() => BridgeConfigSchema.parse({ port: 80.5, token: 'x' })).toThrow();
+  });
+
+  it('rejects empty token', () => {
+    expect(() => BridgeConfigSchema.parse({ port: 8080, token: '' })).toThrow();
+  });
 });
 
 describe('ViewportSizeSchema', () => {

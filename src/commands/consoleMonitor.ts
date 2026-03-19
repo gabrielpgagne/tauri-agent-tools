@@ -56,10 +56,12 @@ function matchesLevel(entry: ConsoleEntry, level?: string): boolean {
   return entry.level === level;
 }
 
-function matchesTextFilter(message: string, filter?: string): boolean {
-  if (!filter) return true;
-  const regex = new RegExp(filter);
-  return regex.test(message);
+function compileRegex(pattern: string, label: string): RegExp {
+  try {
+    return new RegExp(pattern);
+  } catch {
+    throw new Error(`Invalid ${label} regex: ${pattern}`);
+  }
 }
 
 function formatConsoleEntry(entry: ConsoleEntry): string {
@@ -99,6 +101,8 @@ export function registerConsoleMonitor(program: Command): void {
       ConsoleLevelSchema.parse(opts.level);
     }
 
+    const filterRegex = opts.filter ? compileRegex(opts.filter, 'filter') : undefined;
+
     const bridge = await resolveBridge(opts);
 
     const patchResult = await bridge.eval(PATCH_SCRIPT);
@@ -135,7 +139,7 @@ export function registerConsoleMonitor(program: Command): void {
 
         for (const entry of entries) {
           if (!matchesLevel(entry, opts.level)) continue;
-          if (!matchesTextFilter(entry.message, opts.filter)) continue;
+          if (filterRegex && !filterRegex.test(entry.message)) continue;
 
           if (opts.json) {
             console.log(JSON.stringify(entry));
