@@ -153,6 +153,24 @@ export const SnapshotStorageResultSchema = z.object({
 });
 export type SnapshotStorageResult = z.infer<typeof SnapshotStorageResultSchema>;
 
+// === CLI Options ===
+
+export const ImageFormatSchema = z.enum(['png', 'jpg']);
+export type ImageFormat = z.infer<typeof ImageFormatSchema>;
+
+export const StorageTypeSchema = z.enum(['local', 'session', 'cookies', 'all']);
+export type StorageType = z.infer<typeof StorageTypeSchema>;
+
+// === Bridge HTTP Responses ===
+
+export const BridgeEvalResponseSchema = z.object({
+  result: z.unknown(),
+});
+
+export const BridgeLogsResponseSchema = z.object({
+  entries: z.array(RustLogEntrySchema),
+});
+
 // === CLI: package.json ===
 
 export const PackageJsonSchema = z.object({

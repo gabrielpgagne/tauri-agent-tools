@@ -1,5 +1,6 @@
 import { stat } from 'node:fs/promises';
 import { Command } from 'commander';
+import { z } from 'zod';
 import { exec } from '../util/exec.js';
 
 interface DiffResult {
@@ -48,7 +49,9 @@ export function registerDiff(program: Command): void {
     let totalPixels = 0;
     try {
       const { stdout } = await exec('identify', ['-format', '%w %h', image1]);
-      const [w, h] = stdout.toString().trim().split(' ').map(Number);
+      const [w, h] = z.tuple([z.number().int().positive(), z.number().int().positive()]).parse(
+        stdout.toString().trim().split(' ').map(Number),
+      );
       totalPixels = w * h;
     } catch {
       if (opts.threshold !== undefined) {

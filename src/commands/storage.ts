@@ -1,8 +1,8 @@
 import { Command } from 'commander';
 import { z } from 'zod';
 import { addBridgeOptions, resolveBridge } from './shared.js';
-import { StorageEntrySchema } from '../schemas.js';
-import type { StorageEntry } from '../schemas.js';
+import { StorageEntrySchema, StorageTypeSchema } from '../schemas.js';
+import type { StorageEntry, StorageType } from '../schemas.js';
 
 function escapeQuotes(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
@@ -62,16 +62,17 @@ export function registerStorage(program: Command): void {
       port?: number;
       token?: string;
     }) => {
-      const validTypes = ['local', 'session', 'cookies', 'all'];
-      if (!validTypes.includes(opts.type)) {
-        throw new Error(`Invalid storage type: ${opts.type}. Must be one of: ${validTypes.join(', ')}`);
+      const parseResult = StorageTypeSchema.safeParse(opts.type);
+      if (!parseResult.success) {
+        throw new Error(`Invalid storage type: ${opts.type}. Must be one of: ${StorageTypeSchema.options.join(', ')}`);
       }
+      const storageType: StorageType = parseResult.data;
 
       const bridge = await resolveBridge(opts);
       const keyResult: Record<string, string | null> = {};
       const listResult: Record<string, StorageEntry[]> = {};
 
-      if (opts.type === 'local' || opts.type === 'all') {
+      if (storageType === 'local' || storageType === 'all') {
         const raw = await bridge.eval(buildLocalStorageScript(opts.key));
         if (opts.key) {
           keyResult.localStorage = raw == null ? null : String(raw);
@@ -80,7 +81,7 @@ export function registerStorage(program: Command): void {
         }
       }
 
-      if (opts.type === 'session' || opts.type === 'all') {
+      if (storageType === 'session' || storageType === 'all') {
         const raw = await bridge.eval(buildSessionStorageScript(opts.key));
         if (opts.key) {
           keyResult.sessionStorage = raw == null ? null : String(raw);
@@ -89,7 +90,7 @@ export function registerStorage(program: Command): void {
         }
       }
 
-      if (opts.type === 'cookies' || opts.type === 'all') {
+      if (storageType === 'cookies' || storageType === 'all') {
         if (opts.key) {
           const raw = await bridge.eval(buildCookiesScript());
           const cookies = parseCookies(String(raw));

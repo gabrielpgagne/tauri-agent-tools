@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { Command } from 'commander';
 import type { ImageFormat, PlatformAdapter } from '../types.js';
+import { ImageFormatSchema } from '../schemas.js';
 import { addBridgeOptions, resolveBridge } from './shared.js';
 import { computeCropRect, cropImage, resizeImage } from '../util/image.js';
 
@@ -34,7 +35,7 @@ export function registerScreenshot(
     port?: number;
     token?: string;
   }) => {
-    const format = (opts.format === 'jpg' ? 'jpg' : 'png') as ImageFormat;
+    const format = ImageFormatSchema.catch('png').parse(opts.format);
     const adapter = await getAdapter();
 
     let buffer: Buffer;

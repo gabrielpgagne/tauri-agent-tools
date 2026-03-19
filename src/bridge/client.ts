@@ -3,10 +3,10 @@ import {
   ElementRectSchema,
   ViewportSizeSchema,
   A11yNodeSchema,
-  RustLogEntrySchema,
+  BridgeEvalResponseSchema,
+  BridgeLogsResponseSchema,
 } from '../schemas.js';
 import type { ElementRect, RustLogEntry, A11yNode } from '../schemas.js';
-import { z } from 'zod';
 
 export class BridgeClient {
   private baseUrl: string;
@@ -33,7 +33,7 @@ export class BridgeClient {
       throw new Error(`Bridge error (${res.status}): ${text}`);
     }
 
-    const data = await res.json();
+    const data = BridgeEvalResponseSchema.parse(await res.json());
     return data.result;
   }
 
@@ -146,8 +146,8 @@ export class BridgeClient {
       throw new Error(`Bridge error (${res.status}): ${text}`);
     }
 
-    const data = await res.json();
-    return z.array(RustLogEntrySchema).parse(data.entries);
+    const data = BridgeLogsResponseSchema.parse(await res.json());
+    return data.entries;
   }
 
   async ping(): Promise<boolean> {

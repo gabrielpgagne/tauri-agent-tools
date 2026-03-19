@@ -1,4 +1,6 @@
 export type { ElementRect, BridgeConfig, RustLogEntry } from './schemas.js';
+import type { ImageFormat } from './schemas.js';
+export type { ImageFormat };
 
 export interface WindowInfo {
   windowId: string;
@@ -11,8 +13,6 @@ export interface WindowInfo {
 }
 
 export type DisplayServer = 'x11' | 'wayland' | 'darwin' | 'unknown';
-
-export type ImageFormat = 'png' | 'jpg';
 
 export interface PlatformAdapter {
   findWindow(title: string): Promise<string>;
