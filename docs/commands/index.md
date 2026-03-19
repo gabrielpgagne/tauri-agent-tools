@@ -1,6 +1,6 @@
 # Command Reference
 
-tauri-agent-tools provides 14 read-only commands for inspecting Tauri applications.
+tauri-agent-tools provides 15 read-only commands for inspecting Tauri applications.
 
 ## Command Summary
 
@@ -14,6 +14,7 @@ tauri-agent-tools provides 14 read-only commands for inspecting Tauri applicatio
 | [`list-windows`](list-windows.md) | No | List all visible windows, marking Tauri apps |
 | [`ipc-monitor`](ipc-monitor.md) | Yes | Monitor Tauri IPC calls in real-time |
 | [`console-monitor`](console-monitor.md) | Yes | Monitor console output in real-time |
+| [`rust-logs`](rust-logs.md) | Yes | Monitor Rust backend logs and sidecar output |
 | [`storage`](storage.md) | Yes | Inspect localStorage, sessionStorage, and cookies |
 | [`page-state`](page-state.md) | Yes | Query webview page state |
 | [`diff`](diff.md) | No | Compare two screenshots with difference metrics |
@@ -37,6 +38,7 @@ tauri-agent-tools provides 14 read-only commands for inspecting Tauri applicatio
 
 - **[ipc-monitor](ipc-monitor.md)** — watch Tauri IPC calls with timing and filtering
 - **[console-monitor](console-monitor.md)** — capture console.log/warn/error output
+- **[rust-logs](rust-logs.md)** — monitor Rust tracing/log output and sidecar processes
 - **[mutations](mutations.md)** — watch DOM mutations with attribute tracking
 
 ### State Inspection
@@ -77,4 +79,5 @@ Monitor commands accept `--duration` to auto-stop:
 ```bash
 tauri-agent-tools ipc-monitor --duration 5000
 tauri-agent-tools console-monitor --duration 10000 --level error
+tauri-agent-tools rust-logs --duration 10000 --level warn
 ```

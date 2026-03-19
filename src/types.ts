@@ -36,3 +36,11 @@ export interface WindowListEntry extends WindowInfo {
   tauri: boolean;
   bridge?: BridgeConfig;
 }
+
+export interface RustLogEntry {
+  timestamp: number;   // ms since UNIX epoch
+  level: string;       // "trace" | "debug" | "info" | "warn" | "error"
+  target: string;      // Rust module path, e.g. "myapp::db"
+  message: string;
+  source: string;      // "rust" | "sidecar:<name>"
+}

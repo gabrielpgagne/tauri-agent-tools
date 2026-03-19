@@ -4,7 +4,7 @@
 
 ```mermaid
 graph TD
-    CLI[src/cli.ts<br/>Entry Point] --> CMD[src/commands/<br/>14 Commands]
+    CLI[src/cli.ts<br/>Entry Point] --> CMD[src/commands/<br/>15 Commands]
     CMD --> PA[src/platform/<br/>Platform Adapters]
     CMD --> BC[src/bridge/<br/>Bridge Client]
     PA --> X11[X11 Adapter<br/>xdotool + import]
@@ -25,7 +25,7 @@ graph TD
 
 ## Entry Point
 
-`src/cli.ts` creates the `commander` program and registers all 14 commands. It also manages:
+`src/cli.ts` creates the `commander` program and registers all 15 commands. It also manages:
 
 - **Platform adapter creation** via `getAdapter()` — lazy initialization with tool checking
 - **Display server detection** — delegates to `detectDisplayServer()` in `src/platform/detect.ts`
@@ -75,6 +75,7 @@ Adapters are in `src/platform/`:
 - `getViewportSize()` — get `window.innerWidth/innerHeight`
 - `getDocumentTitle()` — get `document.title`
 - `getAccessibilityTree(selector, depth)` — walk the accessibility tree
+- `fetchLogs(timeout?)` — fetch Rust log entries from the `/logs` endpoint
 - `ping()` — check if the bridge is reachable
 
 ## Token Discovery

@@ -1,16 +1,24 @@
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::fs;
-use std::io::Write;
+use std::io::{BufRead, BufReader, Write};
+use std::process::{Command, Stdio};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 use tauri::{AppHandle, Manager};
 use tiny_http::{Header, Response, Server};
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 #[derive(Deserialize)]
 struct EvalRequest {
     js: String,
+    token: String,
+}
+
+#[derive(Deserialize)]
+struct LogRequest {
     token: String,
 }
 
@@ -19,11 +27,191 @@ struct EvalResponse {
     result: serde_json::Value,
 }
 
+#[derive(Clone, Serialize)]
+pub struct LogEntry {
+    pub timestamp: u64,
+    pub level: String,
+    pub target: String,
+    pub message: String,
+    pub source: String,
+}
+
+#[derive(Serialize)]
+struct LogResponse {
+    entries: Vec<LogEntry>,
+}
+
 #[derive(Serialize)]
 struct TokenFile {
     port: u16,
     token: String,
     pid: u32,
+}
+
+/// Ring buffer for log entries. Thread-safe, capped at 1000 entries.
+pub struct LogBuffer {
+    entries: Mutex<VecDeque<LogEntry>>,
+}
+
+impl LogBuffer {
+    pub fn new() -> Self {
+        Self {
+            entries: Mutex::new(VecDeque::new()),
+        }
+    }
+
+    pub fn push(&self, entry: LogEntry) {
+        let mut buf = self.entries.lock().unwrap();
+        if buf.len() >= 1000 {
+            buf.pop_front();
+        }
+        buf.push_back(entry);
+    }
+
+    pub fn drain(&self) -> Vec<LogEntry> {
+        let mut buf = self.entries.lock().unwrap();
+        buf.drain(..).collect()
+    }
+}
+
+/// A tracing layer that captures log events into a `LogBuffer`.
+struct BridgeLogLayer {
+    buffer: Arc<LogBuffer>,
+}
+
+impl<S> tracing_subscriber::Layer<S> for BridgeLogLayer
+where
+    S: tracing::Subscriber,
+{
+    fn on_event(
+        &self,
+        event: &tracing::Event<'_>,
+        _ctx: tracing_subscriber::layer::Context<'_, S>,
+    ) {
+        let mut visitor = MessageVisitor {
+            message: String::new(),
+        };
+        event.record(&mut visitor);
+
+        let entry = LogEntry {
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as u64,
+            level: event.metadata().level().to_string().to_lowercase(),
+            target: event.metadata().target().to_string(),
+            message: visitor.message,
+            source: "rust".to_string(),
+        };
+
+        self.buffer.push(entry);
+    }
+}
+
+struct MessageVisitor {
+    message: String,
+}
+
+impl tracing::field::Visit for MessageVisitor {
+    fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
+        if field.name() == "message" {
+            self.message = format!("{:?}", value);
+            // Remove surrounding quotes if present
+            if self.message.starts_with('"') && self.message.ends_with('"') {
+                self.message = self.message[1..self.message.len() - 1].to_string();
+            }
+        }
+    }
+
+    fn record_str(&mut self, field: &tracing::field::Field, value: &str) {
+        if field.name() == "message" {
+            self.message = value.to_string();
+        }
+    }
+}
+
+/// Create a tracing layer that captures logs into the given buffer.
+/// Use this if you already have a tracing subscriber and want to add log capture.
+///
+/// ```rust
+/// use tracing_subscriber::layer::SubscriberExt;
+/// use tracing_subscriber::util::SubscriberInitExt;
+///
+/// let buffer = std::sync::Arc::new(dev_bridge::LogBuffer::new());
+/// tracing_subscriber::registry()
+///     .with(dev_bridge::create_log_layer(buffer.clone()))
+///     .with(tracing_subscriber::fmt::layer())
+///     .init();
+/// ```
+pub fn create_log_layer(
+    buffer: Arc<LogBuffer>,
+) -> impl tracing_subscriber::Layer<tracing_subscriber::Registry> {
+    BridgeLogLayer { buffer }
+}
+
+/// Spawn a sidecar process with monitored stdout/stderr.
+/// Lines from stdout are logged as "info", lines from stderr as "warn".
+/// Returns the `std::process::Child` handle.
+pub fn spawn_sidecar_monitored(
+    name: &str,
+    command: &str,
+    args: &[&str],
+    log_buffer: &Arc<LogBuffer>,
+) -> Result<std::process::Child, String> {
+    let mut child = Command::new(command)
+        .args(args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to spawn sidecar {name}: {e}"))?;
+
+    let source = format!("sidecar:{name}");
+
+    // Monitor stdout
+    if let Some(stdout) = child.stdout.take() {
+        let buffer = log_buffer.clone();
+        let source = source.clone();
+        thread::spawn(move || {
+            let reader = BufReader::new(stdout);
+            for line in reader.lines() {
+                let Ok(line) = line else { break };
+                buffer.push(LogEntry {
+                    timestamp: std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_millis() as u64,
+                    level: "info".to_string(),
+                    target: "stdout".to_string(),
+                    message: line,
+                    source: source.clone(),
+                });
+            }
+        });
+    }
+
+    // Monitor stderr
+    if let Some(stderr) = child.stderr.take() {
+        let buffer = log_buffer.clone();
+        let source = source.clone();
+        thread::spawn(move || {
+            let reader = BufReader::new(stderr);
+            for line in reader.lines() {
+                let Ok(line) = line else { break };
+                buffer.push(LogEntry {
+                    timestamp: std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_millis() as u64,
+                    level: "warn".to_string(),
+                    target: "stderr".to_string(),
+                    message: line,
+                    source: source.clone(),
+                });
+            }
+        });
+    }
+
+    Ok(child)
 }
 
 /// Shared state for pending eval results.
@@ -47,8 +235,9 @@ pub fn __dev_bridge_result(
 }
 
 /// Start the development bridge HTTP server.
-/// Returns the port number on success.
-pub fn start_bridge(app: &AppHandle) -> Result<u16, String> {
+/// Returns the port number and log buffer on success.
+/// The log buffer can be used with `spawn_sidecar_monitored()` to capture sidecar output.
+pub fn start_bridge(app: &AppHandle) -> Result<(u16, Arc<LogBuffer>), String> {
     let server =
         Server::http("127.0.0.1:0").map_err(|e| format!("Failed to start bridge: {e}"))?;
     let port = server
@@ -80,6 +269,13 @@ pub fn start_bridge(app: &AppHandle) -> Result<u16, String> {
         let _ = fs::remove_file(&cleanup_path);
     });
 
+    // Create log buffer and install tracing layer
+    let log_buffer = Arc::new(LogBuffer::new());
+    let layer = BridgeLogLayer {
+        buffer: log_buffer.clone(),
+    };
+    let _ = tracing_subscriber::registry().with(layer).try_init();
+
     // Create shared pending-results state and register it with Tauri
     let pending = Arc::new(PendingResults {
         results: Mutex::new(HashMap::new()),
@@ -89,13 +285,17 @@ pub fn start_bridge(app: &AppHandle) -> Result<u16, String> {
 
     let app_handle = app.clone();
     let expected_token = token.clone();
+    let server_log_buffer = log_buffer.clone();
 
     thread::spawn(move || {
         // Keep _guard alive for the lifetime of the server thread
         let _cleanup = _guard;
 
         for request in server.incoming_requests() {
-            if request.method().as_str() != "POST" || request.url() != "/eval" {
+            let is_post = request.method().as_str() == "POST";
+            let url = request.url().to_string();
+
+            if !is_post || (url != "/eval" && url != "/logs") {
                 let _ = request.respond(Response::from_string("Not found").with_status_code(404));
                 continue;
             }
@@ -108,7 +308,32 @@ pub fn start_bridge(app: &AppHandle) -> Result<u16, String> {
                 continue;
             }
 
-            // Parse request
+            // Handle /logs endpoint
+            if url == "/logs" {
+                let log_req: LogRequest = match serde_json::from_str(&body) {
+                    Ok(r) => r,
+                    Err(_) => {
+                        let _ = request
+                            .respond(Response::from_string("Invalid JSON").with_status_code(400));
+                        continue;
+                    }
+                };
+
+                if log_req.token != expected_token {
+                    let _ = request
+                        .respond(Response::from_string("Unauthorized").with_status_code(401));
+                    continue;
+                }
+
+                let entries = server_log_buffer.drain();
+                let resp = LogResponse { entries };
+                let json = serde_json::to_string(&resp).unwrap();
+                let header = Header::from_bytes("Content-Type", "application/json").unwrap();
+                let _ = request.respond(Response::from_string(json).with_header(header));
+                continue;
+            }
+
+            // Handle /eval endpoint
             let eval_req: EvalRequest = match serde_json::from_str(&body) {
                 Ok(r) => r,
                 Err(_) => {
@@ -214,5 +439,5 @@ pub fn start_bridge(app: &AppHandle) -> Result<u16, String> {
     eprintln!("Dev bridge started on port {port}");
     eprintln!("Token file: {token_path}");
 
-    Ok(port)
+    Ok((port, log_buffer))
 }

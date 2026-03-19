@@ -4,7 +4,7 @@
 
 **Agent-driven inspection toolkit for Tauri desktop apps**
 
-14 read-only commands to screenshot, inspect, and monitor Tauri apps from the CLI.
+15 read-only commands to screenshot, inspect, and monitor Tauri apps from the CLI.
 
 [![CI](https://github.com/cesarandreslopez/tauri-agent-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/cesarandreslopez/tauri-agent-tools/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/tauri-agent-tools.svg)](https://www.npmjs.com/package/tauri-agent-tools)
@@ -229,6 +229,20 @@ Capture screenshot + DOM tree + page state + storage in one shot. Writes multipl
 | `--eval <js>` | Additional JS to eval and save |
 | `--json` | Output structured manifest |
 
+### `rust-logs`
+
+Monitor Rust backend logs and sidecar output in real-time. Unlike `console-monitor` (which captures JavaScript console output), this captures Rust `tracing`/`log` output and sidecar process stdout/stderr via the bridge's `/logs` endpoint.
+
+| Option | Description |
+|--------|-------------|
+| `--level <level>` | Minimum log level: `trace`, `debug`, `info`, `warn`, `error` |
+| `--target <regex>` | Filter by Rust module path (e.g. `myapp::db`) |
+| `--source <source>` | Filter by source: `rust`, `sidecar`, `all`, or `sidecar:<name>` (default: all) |
+| `--filter <regex>` | Filter messages by regex pattern |
+| `--interval <ms>` | Poll interval in milliseconds (default: 500) |
+| `--duration <ms>` | Auto-stop after N milliseconds |
+| `--json` | Output one JSON object per line |
+
 ## How It Works
 
 ```
@@ -293,7 +307,7 @@ This package ships [Agent Skills](https://agentskills.io) so AI coding agents ca
 
 | Skill | Description |
 |-------|-------------|
-| `tauri-agent-tools` | Using all 14 CLI commands to inspect Tauri apps |
+| `tauri-agent-tools` | Using all 15 CLI commands to inspect Tauri apps |
 | `tauri-bridge-setup` | Adding the Rust dev bridge to a Tauri project |
 
 <details>
@@ -347,7 +361,7 @@ Full documentation is available at the [docs site](https://cesarandreslopez.gith
 - [Installation](https://cesarandreslopez.github.io/tauri-agent-tools/getting-started/installation/) — system requirements and setup
 - [Quick Start](https://cesarandreslopez.github.io/tauri-agent-tools/getting-started/quick-start/) — get running in 5 minutes
 - [Bridge Setup](https://cesarandreslopez.github.io/tauri-agent-tools/getting-started/bridge-setup/) — integrate the Rust bridge into your Tauri app
-- [Command Reference](https://cesarandreslopez.github.io/tauri-agent-tools/commands/) — all 14 commands with examples
+- [Command Reference](https://cesarandreslopez.github.io/tauri-agent-tools/commands/) — all 15 commands with examples
 - [Platform Support](https://cesarandreslopez.github.io/tauri-agent-tools/platform-support/) — X11, Wayland, macOS details
 - [Architecture](https://cesarandreslopez.github.io/tauri-agent-tools/architecture/overview/) — how it works under the hood
 

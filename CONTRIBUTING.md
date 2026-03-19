@@ -48,6 +48,7 @@ tauri-agent-tools/
 │   │   ├── listWindows.ts      # Window listing with Tauri detection
 │   │   ├── ipcMonitor.ts       # Tauri IPC call monitoring
 │   │   ├── consoleMonitor.ts   # Console output monitoring
+│   │   ├── rustLogs.ts         # Rust/sidecar log capture
 │   │   ├── storage.ts          # localStorage/sessionStorage/cookies
 │   │   ├── pageState.ts        # URL, title, viewport, scroll state
 │   │   ├── diff.ts             # Screenshot comparison
@@ -59,7 +60,7 @@ tauri-agent-tools/
 │   │   ├── wayland.ts          # Wayland/Sway adapter
 │   │   └── macos.ts            # macOS adapter
 │   ├── bridge/
-│   │   ├── client.ts           # BridgeClient — HTTP POST to /eval
+│   │   ├── client.ts           # BridgeClient — HTTP POST to /eval and /logs
 │   │   └── tokenDiscovery.ts   # Token file scanning and PID checking
 │   └── util/
 │       ├── exec.ts             # execFile() wrapper, window ID validation

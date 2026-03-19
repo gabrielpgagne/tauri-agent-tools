@@ -1,7 +1,7 @@
 ---
 name: tauri-bridge-setup
 description: How to add the tauri-agent-tools Rust dev bridge to a Tauri application
-version: 0.3.0
+version: 0.4.0
 tags: [tauri, rust, bridge, setup, integration]
 ---
 
@@ -22,6 +22,8 @@ serde_json = "1"
 scopeguard = "1"
 rand = "0.8"
 uuid = { version = "1", features = ["v4"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["registry"] }
 ```
 
 ## Step 2 — Copy the bridge module
@@ -61,7 +63,7 @@ fn main() {
     builder
         .setup(|app| {
             if cfg!(debug_assertions) {
-                if let Err(e) = dev_bridge::start_bridge(app.handle()) {
+                if let Err(e) = dev_bridge::start_bridge(app.handle()).map(|_| ()) {
                     eprintln!("Warning: Failed to start dev bridge: {e}");
                 }
             }
@@ -97,6 +99,26 @@ tauri-agent-tools dom --depth 2
 ```
 
 Both commands succeeding confirms the bridge is working.
+
+## Optional: Sidecar Log Capture
+
+To capture stdout/stderr from sidecar processes (external binaries), use `spawn_sidecar_monitored()`:
+
+```rust
+if cfg!(debug_assertions) {
+    let (_port, log_buffer) = dev_bridge::start_bridge(app.handle())?;
+
+    // Spawn a sidecar with monitored output
+    dev_bridge::spawn_sidecar_monitored(
+        "ffmpeg",           // name (appears as source: "sidecar:ffmpeg")
+        "ffmpeg",           // command
+        &["-i", "input.mp4", "-f", "null", "-"],  // args
+        &log_buffer,
+    )?;
+}
+```
+
+Then monitor with: `tauri-agent-tools rust-logs --source sidecar --duration 10000`
 
 ## Troubleshooting
 

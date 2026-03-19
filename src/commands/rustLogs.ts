@@ -1,0 +1,122 @@
+import { Command } from 'commander';
+import { addBridgeOptions, resolveBridge } from './shared.js';
+import type { RustLogEntry } from '../types.js';
+
+const LEVEL_ORDER = ['trace', 'debug', 'info', 'warn', 'error'];
+
+function matchesLevel(entry: RustLogEntry, level?: string): boolean {
+  if (!level) return true;
+  const threshold = LEVEL_ORDER.indexOf(level);
+  if (threshold === -1) return true;
+  const entryLevel = LEVEL_ORDER.indexOf(entry.level);
+  return entryLevel >= threshold;
+}
+
+function matchesTarget(entry: RustLogEntry, target?: string): boolean {
+  if (!target) return true;
+  const regex = new RegExp(target);
+  return regex.test(entry.target);
+}
+
+function matchesSource(entry: RustLogEntry, source?: string): boolean {
+  if (!source || source === 'all') return true;
+  if (source === 'rust') return entry.source === 'rust';
+  if (source === 'sidecar') return entry.source.startsWith('sidecar:');
+  return entry.source === source;
+}
+
+function matchesTextFilter(message: string, filter?: string): boolean {
+  if (!filter) return true;
+  const regex = new RegExp(filter);
+  return regex.test(message);
+}
+
+function formatLogEntry(entry: RustLogEntry): string {
+  const time = new Date(entry.timestamp).toISOString().slice(11, 23);
+  const level = entry.level.toUpperCase();
+  if (entry.source !== 'rust') {
+    return `[${time}] [${level}] [${entry.source}] ${entry.target}: ${entry.message}`;
+  }
+  return `[${time}] [${level}] ${entry.target}: ${entry.message}`;
+}
+
+export function registerRustLogs(program: Command): void {
+  const cmd = new Command('rust-logs')
+    .description('Monitor Rust backend logs and sidecar output in real-time')
+    .option('--level <level>', 'Minimum log level: trace, debug, info, warn, error')
+    .option('--target <regex>', 'Filter by Rust module path (regex)')
+    .option('--source <source>', 'Filter by source: rust, sidecar, all, or sidecar:<name>', 'all')
+    .option('--filter <regex>', 'Filter messages by regex pattern')
+    .option('--interval <ms>', 'Poll interval in milliseconds', parseInt, 500)
+    .option('--duration <ms>', 'Auto-stop after N milliseconds', parseInt)
+    .option('--json', 'Output one JSON object per line');
+
+  addBridgeOptions(cmd);
+
+  cmd.action(async (opts: {
+    level?: string;
+    target?: string;
+    source: string;
+    filter?: string;
+    interval: number;
+    duration?: number;
+    json?: boolean;
+    port?: number;
+    token?: string;
+  }) => {
+    if (opts.level && !LEVEL_ORDER.includes(opts.level)) {
+      throw new Error(
+        `Invalid level: ${opts.level}. Must be one of: ${LEVEL_ORDER.join(', ')}`,
+      );
+    }
+
+    const bridge = await resolveBridge(opts);
+
+    let stopped = false;
+
+    const onSignal = () => {
+      stopped = true;
+    };
+    process.on('SIGINT', onSignal);
+    process.on('SIGTERM', onSignal);
+
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (opts.duration) {
+      timer = setTimeout(() => {
+        stopped = true;
+      }, opts.duration);
+    }
+
+    if (!opts.json) {
+      console.error('Monitoring Rust logs... (Ctrl+C to stop)');
+    }
+
+    try {
+      while (!stopped) {
+        await new Promise((resolve) => setTimeout(resolve, opts.interval));
+        if (stopped) break;
+
+        const entries: RustLogEntry[] = await bridge.fetchLogs();
+
+        for (const entry of entries) {
+          if (!matchesLevel(entry, opts.level)) continue;
+          if (!matchesTarget(entry, opts.target)) continue;
+          if (!matchesSource(entry, opts.source)) continue;
+          if (!matchesTextFilter(entry.message, opts.filter)) continue;
+
+          if (opts.json) {
+            console.log(JSON.stringify(entry));
+          } else {
+            console.log(formatLogEntry(entry));
+          }
+        }
+      }
+    } finally {
+      if (timer) clearTimeout(timer);
+      process.off('SIGINT', onSignal);
+      process.off('SIGTERM', onSignal);
+    }
+  });
+
+  program.addCommand(cmd);
+}

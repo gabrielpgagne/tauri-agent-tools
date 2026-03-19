@@ -8,8 +8,13 @@ const TEST_TOKEN = 'test-secret-token';
 let server: ReturnType<typeof createServer>;
 let port: number;
 
+const SAMPLE_LOG_ENTRIES = [
+  { timestamp: 1700000000000, level: 'info', target: 'myapp::db', message: 'Connected', source: 'rust' },
+  { timestamp: 1700000001000, level: 'warn', target: 'myapp::api', message: 'Slow query', source: 'rust' },
+];
+
 function handleRequest(req: IncomingMessage, res: ServerResponse): void {
-  if (req.method !== 'POST' || req.url !== '/eval') {
+  if (req.method !== 'POST' || (req.url !== '/eval' && req.url !== '/logs')) {
     res.writeHead(404);
     res.end('Not found');
     return;
@@ -23,6 +28,13 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
     if (data.token !== TEST_TOKEN) {
       res.writeHead(401);
       res.end('Unauthorized');
+      return;
+    }
+
+    // Handle /logs endpoint
+    if (req.url === '/logs') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ entries: SAMPLE_LOG_ENTRIES }));
       return;
     }
 
@@ -115,6 +127,44 @@ describe('BridgeClient', () => {
     it('returns false for wrong port', async () => {
       const badClient = new BridgeClient({ port: 1, token: TEST_TOKEN });
       expect(await badClient.ping()).toBe(false);
+    });
+  });
+
+  describe('fetchLogs', () => {
+    it('returns log entries from /logs endpoint', async () => {
+      const entries = await client().fetchLogs();
+      expect(entries).toEqual(SAMPLE_LOG_ENTRIES);
+      expect(entries).toHaveLength(2);
+      expect(entries[0].level).toBe('info');
+      expect(entries[1].target).toBe('myapp::api');
+    });
+
+    it('throws on authentication failure', async () => {
+      await expect(client('wrong-token').fetchLogs()).rejects.toThrow(
+        'Bridge authentication failed',
+      );
+    });
+
+    it('throws "update your bridge" on 404', async () => {
+      // Create a server that always returns 404 for /logs
+      const notFoundServer = createServer((req, res) => {
+        res.writeHead(404);
+        res.end('Not found');
+      });
+      const notFoundPort = await new Promise<number>((resolve) => {
+        notFoundServer.listen(0, '127.0.0.1', () => {
+          resolve((notFoundServer.address() as AddressInfo).port);
+        });
+      });
+
+      try {
+        const badClient = new BridgeClient({ port: notFoundPort, token: TEST_TOKEN });
+        await expect(badClient.fetchLogs()).rejects.toThrow(
+          'Bridge does not support /logs',
+        );
+      } finally {
+        await new Promise<void>((resolve) => notFoundServer.close(() => resolve()));
+      }
     });
   });
 

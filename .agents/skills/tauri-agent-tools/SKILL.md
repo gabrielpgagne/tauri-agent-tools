@@ -1,7 +1,7 @@
 ---
 name: tauri-agent-tools
 description: CLI for inspecting Tauri desktop apps — DOM queries, screenshots, IPC/console monitoring, storage, and page state
-version: 0.3.0
+version: 0.4.0
 tags: [tauri, desktop, debugging, screenshot, dom, inspection, diff, mutations, snapshot]
 ---
 
@@ -32,7 +32,7 @@ npm install -g tauri-agent-tools
 Some commands require the Rust dev bridge running inside the Tauri app. Others work standalone.
 
 **Bridge required** (needs running Tauri app with bridge):
-`screenshot --selector`, `dom`, `eval`, `wait --selector`, `wait --eval`, `ipc-monitor`, `console-monitor`, `storage`, `page-state`, `mutations`, `snapshot`
+`screenshot --selector`, `dom`, `eval`, `wait --selector`, `wait --eval`, `ipc-monitor`, `console-monitor`, `rust-logs`, `storage`, `page-state`, `mutations`, `snapshot`
 
 **Standalone** (no bridge needed):
 `screenshot --title` (full window only), `wait --title`, `list-windows`, `info`, `diff`
@@ -97,6 +97,25 @@ tauri-agent-tools diff /tmp/before.png /tmp/after.png --json
 tauri-agent-tools diff /tmp/expected.png /tmp/actual.png --threshold 1
 ```
 
+### Monitor Rust logs and sidecar output
+
+```bash
+# Watch Rust tracing logs for 10 seconds
+tauri-agent-tools rust-logs --duration 10000 --json
+
+# Only warnings and errors (severity-based: warn shows warn+error)
+tauri-agent-tools rust-logs --level warn --duration 5000 --json
+
+# Filter to a specific Rust module
+tauri-agent-tools rust-logs --target "myapp::db" --duration 5000 --json
+
+# Only sidecar output (e.g. ffmpeg, python scripts)
+tauri-agent-tools rust-logs --source sidecar --duration 10000 --json
+
+# Specific sidecar
+tauri-agent-tools rust-logs --source sidecar:ffmpeg --duration 5000 --json
+```
+
 ### Watch DOM mutations
 
 ```bash
@@ -126,6 +145,7 @@ tauri-agent-tools dom --text "Settings" --first --json
 | `info` | `--title <regex>`, `--json` | no | Window geometry and display info |
 | `ipc-monitor` | `--filter <cmd>`, `--duration <ms>`, `--json` | yes | Monitor Tauri IPC calls |
 | `console-monitor` | `--level <lvl>`, `--filter <regex>`, `--duration <ms>`, `--json` | yes | Monitor console output |
+| `rust-logs` | `--level <lvl>`, `--target <regex>`, `--source <src>`, `--duration <ms>`, `--json` | yes | Monitor Rust logs and sidecar output |
 | `storage` | `--type <local\|session\|cookies\|all>`, `--key <name>`, `--json` | yes | Inspect browser storage |
 | `page-state` | `--json` | yes | URL, title, viewport, scroll, document size |
 | `diff` | `<image1> <image2>`, `-o <path>`, `--threshold <pct>`, `--json` | no | Compare two screenshots with difference metrics |
@@ -136,6 +156,6 @@ tauri-agent-tools dom --text "Settings" --first --json
 
 - **All read-only.** No commands modify app state, inject input, or write to storage.
 - **Use `--json`** for structured, parseable output in automation.
-- **Always use `--duration`** with `ipc-monitor`, `console-monitor`, and `mutations` — without it, they run indefinitely.
+- **Always use `--duration`** with `ipc-monitor`, `console-monitor`, `rust-logs`, and `mutations` — without it, they run indefinitely.
 - **`screenshot --selector`** requires both the bridge AND platform screenshot tools (`imagemagick`).
 - **One bridge at a time.** Auto-discovery picks the first token file found. If multiple Tauri apps run simultaneously, use `--port` and `--token` explicitly.

@@ -14,6 +14,8 @@ serde_json = "1"
 scopeguard = "1"
 rand = "0.8"
 uuid = { version = "1", features = ["v4"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
 ```
 
 ### 2. Copy the bridge module
@@ -39,7 +41,7 @@ fn main() {
     builder
         .setup(|app| {
             if cfg!(debug_assertions) {
-                if let Err(e) = dev_bridge::start_bridge(app.handle()) {
+                if let Err(e) = dev_bridge::start_bridge(app.handle()).map(|_| ()) {
                     eprintln!("Warning: Failed to start dev bridge: {e}");
                 }
             }
@@ -80,10 +82,12 @@ tauri-agent-tools eval "document.title"
 1. Bridge starts an HTTP server on a random localhost port
 2. A token file with `{ port, token, pid }` is written to `/tmp/`
 3. `tauri-agent-tools` discovers the token file and authenticates via the token
-4. Requests are `POST /eval { js, token }` — the bridge injects JS into the webview
-5. The injected JS evaluates the expression, then calls back into Rust via `window.__TAURI__.core.invoke("__dev_bridge_result", { id, value })` to deliver the result
-6. The HTTP handler thread waits for the result (up to 5 seconds) and returns it as JSON
-7. The token file is cleaned up when the app exits
+4. Requests are `POST /eval { js, token }` (JS evaluation) or `POST /logs { token }` (Rust log retrieval)
+5. For `/eval`, the bridge injects JS into the webview
+6. The injected JS evaluates the expression, then calls back into Rust via `window.__TAURI__.core.invoke("__dev_bridge_result", { id, value })` to deliver the result
+7. The HTTP handler thread waits for the result (up to 5 seconds) and returns it as JSON
+8. For `/logs`, the bridge drains its ring buffer of captured `tracing` events and returns them as JSON
+9. The token file is cleaned up when the app exits
 
 ## Security
 

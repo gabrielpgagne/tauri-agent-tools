@@ -16,6 +16,8 @@ serde_json = "1"
 scopeguard = "1"
 rand = "0.8"
 uuid = { version = "1", features = ["v4"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["registry"] }
 ```
 
 ### 2. Copy the bridge module
@@ -45,7 +47,7 @@ fn main() {
     builder
         .setup(|app| {
             if cfg!(debug_assertions) {
-                if let Err(e) = dev_bridge::start_bridge(app.handle()) {
+                if let Err(e) = dev_bridge::start_bridge(app.handle()).map(|_| ()) {
                     eprintln!("Warning: Failed to start dev bridge: {e}");
                 }
             }
@@ -135,6 +137,50 @@ The bridge binds to a random port. If you need a specific port, modify `dev_brid
 
 ```bash
 tauri-agent-tools dom --port 9876 --token your-token
+```
+
+## Log Capture
+
+The bridge automatically captures Rust `tracing` log events. To also capture sidecar process output, use `spawn_sidecar_monitored()`:
+
+```rust
+if cfg!(debug_assertions) {
+    let (port, log_buffer) = dev_bridge::start_bridge(app.handle())?;
+
+    // Spawn a sidecar with monitored output
+    dev_bridge::spawn_sidecar_monitored(
+        "ffmpeg",
+        "ffmpeg",
+        &["-i", "input.mp4", "-f", "null", "-"],
+        &log_buffer,
+    )?;
+}
+```
+
+Then use `tauri-agent-tools rust-logs` to view the captured output:
+
+```bash
+# All Rust logs and sidecar output
+tauri-agent-tools rust-logs --duration 10000
+
+# Only sidecar output
+tauri-agent-tools rust-logs --source sidecar --duration 10000
+
+# Only warnings and errors
+tauri-agent-tools rust-logs --level warn
+```
+
+If you already have a `tracing` subscriber, use `create_log_layer()` instead:
+
+```rust
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+
+let log_buffer = std::sync::Arc::new(dev_bridge::LogBuffer::new());
+tracing_subscriber::registry()
+    .with(dev_bridge::create_log_layer(log_buffer.clone()))
+    .with(tracing_subscriber::fmt::layer())
+    .init();
 ```
 
 ## Agent-Assisted Setup

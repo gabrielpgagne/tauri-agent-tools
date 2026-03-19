@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-19
+
+### Added
+
+- `rust-logs` command — monitor Rust backend `tracing`/`log` output and sidecar process stdout/stderr in real-time via the bridge's `/logs` endpoint
+- `RustLogEntry` type for structured Rust log entries with timestamp, level, target, message, and source fields
+- `BridgeClient.fetchLogs()` method for polling the `/logs` endpoint with 404 detection for old bridges
+- Severity-based level filtering (`--level warn` shows warn and error, matching Rust `RUST_LOG` convention)
+- `--target <regex>` filtering by Rust module path
+- `--source <source>` filtering by origin (`rust`, `sidecar`, `all`, or `sidecar:<name>`)
+- Rust bridge: `LogBuffer` ring buffer (max 1000 entries), `BridgeLogLayer` tracing layer, `spawn_sidecar_monitored()` helper, `POST /logs` endpoint, `create_log_layer()` public API
+
+### Changed
+
+- `start_bridge()` now returns `(u16, Arc<LogBuffer>)` instead of `u16`
+- Bridge example requires `tracing` and `tracing-subscriber` crate dependencies
+
 ## [0.3.0] - 2026-03-17
 
 ### Added

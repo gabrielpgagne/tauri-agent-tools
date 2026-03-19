@@ -24,15 +24,15 @@ npx vitest run tests/commands/screenshot.test.ts
 
 | Location | Purpose |
 |----------|---------|
-| `src/cli.ts` | Entry point — registers all 14 commands via `commander` |
-| `src/types.ts` | Shared types: `WindowInfo`, `ElementRect`, `BridgeConfig`, `PlatformAdapter`, `DisplayServer` |
-| `src/commands/` | One file per command (`screenshot.ts`, `dom.ts`, `eval.ts`, `wait.ts`, `info.ts`, `listWindows.ts`, `ipcMonitor.ts`, `consoleMonitor.ts`, `storage.ts`, `pageState.ts`, `diff.ts`, `mutations.ts`, `snapshot.ts`) |
+| `src/cli.ts` | Entry point — registers all 15 commands via `commander` |
+| `src/types.ts` | Shared types: `WindowInfo`, `ElementRect`, `BridgeConfig`, `PlatformAdapter`, `DisplayServer`, `RustLogEntry` |
+| `src/commands/` | One file per command (`screenshot.ts`, `dom.ts`, `eval.ts`, `wait.ts`, `info.ts`, `listWindows.ts`, `ipcMonitor.ts`, `consoleMonitor.ts`, `rustLogs.ts`, `storage.ts`, `pageState.ts`, `diff.ts`, `mutations.ts`, `snapshot.ts`) |
 | `src/commands/shared.ts` | `addBridgeOptions()` and `resolveBridge()` — shared bridge option wiring |
 | `src/platform/detect.ts` | `detectDisplayServer()` and `ensureTools()` — runtime platform detection |
 | `src/platform/x11.ts` | X11 adapter: `xdotool` + ImageMagick `import` |
 | `src/platform/wayland.ts` | Wayland/Sway adapter: `swaymsg` + `grim` |
 | `src/platform/macos.ts` | macOS adapter: `screencapture` + `osascript` + `sips` |
-| `src/bridge/client.ts` | `BridgeClient` class — HTTP POST to `/eval` endpoint |
+| `src/bridge/client.ts` | `BridgeClient` class — HTTP POST to `/eval` and `/logs` endpoints |
 | `src/bridge/tokenDiscovery.ts` | Token file scanning (`/tmp/tauri-dev-bridge-*.token`), PID liveness, stale cleanup |
 | `src/util/image.ts` | `cropImage()`, `resizeImage()`, `computeCropRect()` — ImageMagick operations |
 | `src/util/exec.ts` | `exec()` wrapper around `execFile()`, `validateWindowId()` |
@@ -42,7 +42,7 @@ npx vitest run tests/commands/screenshot.test.ts
 
 **Module system:** ESM (`"type": "module"`) with NodeNext resolution. All imports must use `.js` extensions (pointing to compiled output).
 
-**Entry point:** `src/cli.ts` registers 14 commands via `commander`. Each command is in `src/commands/`.
+**Entry point:** `src/cli.ts` registers 15 commands via `commander`. Each command is in `src/commands/`.
 
 **Command registration pattern:** Each command file exports a `registerXxx(program, ...)` function. Commands that need the platform adapter receive `getAdapter` as a parameter. Commands that need the bridge use `resolveBridge()` from `shared.ts`, which handles auto-discovery or explicit `--port`/`--token`.
 

@@ -8,7 +8,7 @@ This package includes two [Agent Skills](https://agentskills.io):
 
 | Skill | Path | Purpose |
 |-------|------|---------|
-| `tauri-agent-tools` | `.agents/skills/tauri-agent-tools/SKILL.md` | Using the 14 CLI commands to inspect Tauri apps |
+| `tauri-agent-tools` | `.agents/skills/tauri-agent-tools/SKILL.md` | Using the 15 CLI commands to inspect Tauri apps |
 | `tauri-bridge-setup` | `.agents/skills/tauri-bridge-setup/SKILL.md` | Adding the Rust dev bridge to a Tauri project |
 
 ## Quick Reference
@@ -21,7 +21,7 @@ This package includes two [Agent Skills](https://agentskills.io):
 `list-windows`, `info`, `screenshot --title`, `wait --title`
 
 **Bridge-required commands** (Tauri app must have dev bridge running):
-`dom`, `eval`, `screenshot --selector`, `wait --selector/--eval`, `ipc-monitor`, `console-monitor`, `storage`, `page-state`, `mutations`, `snapshot`
+`dom`, `eval`, `screenshot --selector`, `wait --selector/--eval`, `ipc-monitor`, `console-monitor`, `rust-logs`, `storage`, `page-state`, `mutations`, `snapshot`
 
 **Local-only commands** (no bridge needed):
 `diff`
@@ -30,4 +30,6 @@ This package includes two [Agent Skills](https://agentskills.io):
 
 **Structured output:** Use `--json` on any command for machine-readable output.
 
-**Monitors:** Always pass `--duration <ms>` to `ipc-monitor`, `console-monitor`, and `mutations` to avoid indefinite execution.
+**Monitors:** Always pass `--duration <ms>` to `ipc-monitor`, `console-monitor`, `rust-logs`, and `mutations` to avoid indefinite execution.
+
+**Sidecar monitoring:** `rust-logs` can capture stdout/stderr from sidecar processes (external binaries spawned by the Tauri app). Use `--source sidecar` for all sidecars or `--source sidecar:<name>` for a specific one.

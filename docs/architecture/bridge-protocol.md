@@ -115,6 +115,65 @@ Token files are written to the system temp directory (`/tmp/` on Linux/macOS):
 - **Cleanup** — token file deleted on exit via `scopeguard`
 - **Read-only** — the CLI only evaluates JS, never injects input events
 
+## Log Capture Endpoint
+
+### Endpoint
+
+```
+POST http://127.0.0.1:{port}/logs
+```
+
+### Request
+
+```json
+{
+  "token": "a1b2c3d4e5f6..."
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `token` | string | 32-character authentication token |
+
+### Response
+
+**Success (200):**
+
+```json
+{
+  "entries": [
+    {
+      "timestamp": 1710000000000,
+      "level": "info",
+      "target": "myapp::db",
+      "message": "Connected to database",
+      "source": "rust"
+    },
+    {
+      "timestamp": 1710000001000,
+      "level": "warn",
+      "target": "stderr",
+      "message": "deprecated flag used",
+      "source": "sidecar:ffmpeg"
+    }
+  ]
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `entries[].timestamp` | number | Milliseconds since UNIX epoch |
+| `entries[].level` | string | `trace`, `debug`, `info`, `warn`, or `error` |
+| `entries[].target` | string | Rust module path or `stdout`/`stderr` for sidecars |
+| `entries[].message` | string | Log message text |
+| `entries[].source` | string | `rust` for tracing logs, `sidecar:<name>` for sidecar output |
+
+### Behavior
+
+- Calling `/logs` **drains** the buffer — each entry is returned only once
+- The buffer holds up to 1000 entries; oldest entries are dropped on overflow
+- The buffer is populated by a `tracing::Layer` (Rust logs) and background reader threads (sidecar stdout/stderr)
+
 ## Error Handling
 
 | HTTP Status | Meaning | CLI Behavior |

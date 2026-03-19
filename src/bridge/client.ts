@@ -1,4 +1,4 @@
-import type { BridgeConfig, ElementRect } from '../types.js';
+import type { BridgeConfig, ElementRect, RustLogEntry } from '../types.js';
 
 export class BridgeClient {
   private baseUrl: string;
@@ -115,6 +115,31 @@ export class BridgeClient {
     const result = await this.eval(js);
     if (result === null || result === undefined) return null;
     return JSON.parse(String(result));
+  }
+
+  async fetchLogs(timeout = 5000): Promise<RustLogEntry[]> {
+    const res = await fetch(`${this.baseUrl}/logs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: this.token }),
+      signal: AbortSignal.timeout(timeout),
+    });
+
+    if (!res.ok) {
+      if (res.status === 404) {
+        throw new Error(
+          'Bridge does not support /logs — update your dev_bridge.rs to the latest version',
+        );
+      }
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('Bridge authentication failed — check your token');
+      }
+      const text = await res.text().catch(() => '');
+      throw new Error(`Bridge error (${res.status}): ${text}`);
+    }
+
+    const data = await res.json();
+    return data.entries as RustLogEntry[];
   }
 
   async ping(): Promise<boolean> {
