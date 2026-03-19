@@ -1,8 +1,8 @@
 import { Command } from 'commander';
 import { z } from 'zod';
 import { addBridgeOptions, resolveBridge } from './shared.js';
-import { DomNodeSchema, A11yNodeSchema } from '../schemas.js';
-import type { DomNode, A11yNode } from '../schemas.js';
+import { DomNodeSchema, A11yNodeSchema, DomModeSchema } from '../schemas.js';
+import type { DomNode, A11yNode, DomMode } from '../schemas.js';
 
 function formatA11yLine(node: A11yNode, indent: number): string {
   let line = '  '.repeat(indent);
@@ -145,6 +145,7 @@ export function registerDom(program: Command): void {
     port?: number;
     token?: string;
   }) => {
+    const mode = DomModeSchema.parse(opts.mode);
     const selector = opts.selector ?? selectorArg;
     const bridge = await resolveBridge(opts);
 
@@ -210,7 +211,7 @@ export function registerDom(program: Command): void {
       return;
     }
 
-    if (opts.mode === 'accessibility') {
+    if (mode === 'accessibility') {
       const tree = await bridge.getAccessibilityTree(selector, opts.depth);
       if (!tree) {
         throw new Error(`Element not found: ${selector}`);

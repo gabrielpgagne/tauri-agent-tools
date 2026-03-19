@@ -31,9 +31,12 @@ export const ViewportSizeSchema = z.object({
 });
 export type ViewportSize = z.infer<typeof ViewportSizeSchema>;
 
+export const RustLogLevelSchema = z.enum(['trace', 'debug', 'info', 'warn', 'error']);
+export type RustLogLevel = z.infer<typeof RustLogLevelSchema>;
+
 export const RustLogEntrySchema = z.object({
   timestamp: z.number(),
-  level: z.string(),
+  level: RustLogLevelSchema,
   target: z.string(),
   message: z.string(),
   source: z.string(),
@@ -104,8 +107,11 @@ export type PageState = z.infer<typeof PageStateSchema>;
 
 // === Console Monitor ===
 
+export const ConsoleLevelSchema = z.enum(['log', 'warn', 'error', 'info', 'debug']);
+export type ConsoleLevel = z.infer<typeof ConsoleLevelSchema>;
+
 export const ConsoleEntrySchema = z.object({
-  level: z.string(),
+  level: ConsoleLevelSchema,
   message: z.string(),
   timestamp: z.number(),
 });
@@ -113,8 +119,11 @@ export type ConsoleEntry = z.infer<typeof ConsoleEntrySchema>;
 
 // === Mutations ===
 
+export const MutationTypeSchema = z.enum(['childList', 'attributes', 'characterData']);
+export type MutationType = z.infer<typeof MutationTypeSchema>;
+
 export const MutationEntrySchema = z.object({
-  type: z.string(),
+  type: MutationTypeSchema,
   target: z.string(),
   timestamp: z.number(),
   added: z.array(z.object({
@@ -160,6 +169,13 @@ export type ImageFormat = z.infer<typeof ImageFormatSchema>;
 
 export const StorageTypeSchema = z.enum(['local', 'session', 'cookies', 'all']);
 export type StorageType = z.infer<typeof StorageTypeSchema>;
+
+export const DomModeSchema = z.enum(['dom', 'accessibility']);
+export type DomMode = z.infer<typeof DomModeSchema>;
+
+// === Platform: Window ID ===
+
+export const WindowIdSchema = z.string().regex(/^\d+$/, 'Invalid window ID');
 
 // === Bridge HTTP Responses ===
 

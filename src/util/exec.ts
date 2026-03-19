@@ -1,12 +1,10 @@
 import { execFile as cpExecFile } from 'node:child_process';
+import { WindowIdSchema } from '../schemas.js';
 
 const MAX_BUFFER = 100 * 1024 * 1024; // 100MB
-const WINDOW_ID_RE = /^\d+$/;
 
 export function validateWindowId(id: string): void {
-  if (!WINDOW_ID_RE.test(id)) {
-    throw new Error(`Invalid window ID: ${id}`);
-  }
+  WindowIdSchema.parse(id);
 }
 
 export interface ExecResult {

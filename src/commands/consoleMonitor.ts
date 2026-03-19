@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { z } from 'zod';
 import { addBridgeOptions, resolveBridge } from './shared.js';
 import type { BridgeClient } from '../bridge/client.js';
-import { ConsoleEntrySchema } from '../schemas.js';
+import { ConsoleEntrySchema, ConsoleLevelSchema } from '../schemas.js';
 import type { ConsoleEntry } from '../schemas.js';
 
 const PATCH_SCRIPT = `(() => {
@@ -95,10 +95,8 @@ export function registerConsoleMonitor(program: Command): void {
     port?: number;
     token?: string;
   }) => {
-    if (opts.level && !['log', 'warn', 'error', 'info', 'debug'].includes(opts.level)) {
-      throw new Error(
-        `Invalid level: ${opts.level}. Must be one of: log, warn, error, info, debug`,
-      );
+    if (opts.level) {
+      ConsoleLevelSchema.parse(opts.level);
     }
 
     const bridge = await resolveBridge(opts);

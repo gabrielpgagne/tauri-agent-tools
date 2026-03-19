@@ -1,14 +1,14 @@
 import { Command } from 'commander';
 import { addBridgeOptions, resolveBridge } from './shared.js';
 import type { RustLogEntry } from '../types.js';
-
-const LEVEL_ORDER = ['trace', 'debug', 'info', 'warn', 'error'];
+import { RustLogLevelSchema } from '../schemas.js';
 
 function matchesLevel(entry: RustLogEntry, level?: string): boolean {
   if (!level) return true;
-  const threshold = LEVEL_ORDER.indexOf(level);
+  const levels = RustLogLevelSchema.options;
+  const threshold = levels.indexOf(level as typeof levels[number]);
   if (threshold === -1) return true;
-  const entryLevel = LEVEL_ORDER.indexOf(entry.level);
+  const entryLevel = levels.indexOf(entry.level);
   return entryLevel >= threshold;
 }
 
@@ -64,10 +64,8 @@ export function registerRustLogs(program: Command): void {
     port?: number;
     token?: string;
   }) => {
-    if (opts.level && !LEVEL_ORDER.includes(opts.level)) {
-      throw new Error(
-        `Invalid level: ${opts.level}. Must be one of: ${LEVEL_ORDER.join(', ')}`,
-      );
+    if (opts.level) {
+      RustLogLevelSchema.parse(opts.level);
     }
 
     const bridge = await resolveBridge(opts);
